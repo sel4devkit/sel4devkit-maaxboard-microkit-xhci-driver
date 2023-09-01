@@ -132,7 +132,6 @@ xhci_intr1(struct xhci_softc * const sc)
 int
 xhci_intr(void *v)
 {
-	printf("xhci intr\n");
 	struct xhci_softc * const sc = v;
 	int ret = 0;
 	//printf("sc: %d\n", sc);
@@ -169,7 +168,6 @@ notified(sel4cp_channel ch) {
     switch (ch) {
         case 6:
             if (glob_xhci_sc != NULL) {
-				printf("hardware intr\n");
                 xhci_intr(glob_xhci_sc);
 				//printf("Back from xhci_intr\n");
             } else {
