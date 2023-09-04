@@ -1,3 +1,4 @@
+/* This work is Crown Copyright NCSC, 2023. */
 #pragma once
 
 // #include <sys/param.h>
