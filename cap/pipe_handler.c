@@ -1,4 +1,4 @@
-//TODO: vimdiff this file
+//Not currently used
 #include <sel4cp.h>
 #include <printf.h>
 

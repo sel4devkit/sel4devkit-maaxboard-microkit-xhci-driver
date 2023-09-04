@@ -13,7 +13,6 @@
 #include <sys/device.h>
 #include <sys/device_impl.h>
 #include <sys/intr.h>
-// #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/kmem.h>
 
@@ -71,18 +70,6 @@ int cold = 1;
 /* Pointers to shared_ringbuffers */
 ring_handle_t *kbd_buffer_ring;
 
-typedef struct state {
-    /* Pointers to shared buffers */
-    ring_handle_t rx_ring;
-    ring_handle_t tx_ring;
-    /*
-    //  * Metadata associated with buffers
-    //  */
-    // ethernet_buffer_t buffer_metadata[NUM_BUFFERS * 2];
-} state_t;
-
-state_t state;
-
 void
 init(void) {
     printf("SOFTWARE: dmapaddr = %p\n", dma_cp_paddr);
@@ -110,7 +97,6 @@ notified(sel4cp_channel ch) {
             } else {
                 printf("FATAL: softintr sc not defined");
             }
-            //printf("end of notified software interrupt\n");
             break;
     }
 }

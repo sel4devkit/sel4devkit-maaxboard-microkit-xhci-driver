@@ -40,7 +40,7 @@ NETBSD_SRC			:=  dev_verbose.o subr_device.o subr_autoconf.o usbdi_util.o usbdi.
 UTILS				:= 	tinyalloc.o printf.o util.o timer.o
 
 XHCI_STUB_OBJS 		:=  xhci_stub.o $(NETBSD_SRC) imx8mq_usbphy.o dwc3_fdt.o shared_ringbuffer.o $(UTILS)
-PIPE_HANDLE_OBJS 	:=  pipe_handler.o $(NETBSD_SRC) $(UTILS) shared_ringbuffer.o
+# PIPE_HANDLE_OBJS 	:=  pipe_handler.o $(NETBSD_SRC) $(UTILS) shared_ringbuffer.o
 # TIMER_OBJS 		:=  timer.o subr_device.o imx8mq_usbphy.o usbdi_util.o usbdi.o usbroothub.o sel4_bus_funcs.o tinyalloc.o dwc3_fdt.o printf.o dma.o usb.o usb_quirks.o usb_subr.o xhci.o usb_mem.o util.o uhub.o
 SOFTWARE_OBJS 		:=  software_interrupts.o $(NETBSD_SRC) $(UTILS) shared_ringbuffer.o
 HARDWARE_OBJS 		:=  hardware_interrupts.o sel4_bus_funcs.o $(UTILS)
@@ -165,9 +165,6 @@ $(BUILD_DIR)/xhci_stub.elf: $(addprefix $(BUILD_DIR)/, $(XHCI_STUB_OBJS))
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 
 $(BUILD_DIR)/hardware.elf: $(addprefix $(BUILD_DIR)/, $(HARDWARE_OBJS))
-	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
-
-$(BUILD_DIR)/pipe_handler.elf: $(addprefix $(BUILD_DIR)/, $(PIPE_HANDLE_OBJS))
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 
 $(BUILD_DIR)/kbd_logger.elf: $(addprefix $(BUILD_DIR)/, $(KBD_LOGGER_OBJS))

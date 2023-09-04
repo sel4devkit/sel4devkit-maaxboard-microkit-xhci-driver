@@ -1,4 +1,3 @@
-//TODO: vimdiff this file
 #include <sel4cp.h>
 #include <printf.h>
 
@@ -13,7 +12,6 @@
 #include <sys/device.h>
 #include <sys/device_impl.h>
 #include <sys/intr.h>
-// #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/kmem.h>
 
@@ -91,10 +89,8 @@ xhci_intr1(struct xhci_softc * const sc)
 	uint32_t usbsts;
 	uint32_t iman;
 
-	/* XHCIHIST_FUNC(); */
 
 	usbsts = xhci_op_read_4(sc, XHCI_USBSTS);
-	/* XHCIHIST_CALLARGS("USBSTS 0x%08jx", usbsts, 0, 0, 0); */
 	if ((usbsts & (XHCI_STS_HSE | XHCI_STS_EINT | XHCI_STS_PCD |
 	    XHCI_STS_HCE)) == 0) {
 		printf("ignored intr not for this device\n");
@@ -134,10 +130,8 @@ xhci_intr(void *v)
 {
 	struct xhci_softc * const sc = v;
 	int ret = 0;
-	//printf("sc: %d\n", sc);
 	if (sc == NULL)
 		return 0;
-	//printf("sc not null\n");
 	mutex_spin_enter(&sc->sc_intr_lock);
 
     if (sc->sc_dying) {
@@ -149,7 +143,6 @@ xhci_intr(void *v)
 	}
 done:
 	mutex_spin_exit(&sc->sc_intr_lock);
-	//printf("returning ret: %d\n", ret);
 	return ret;
 }
 
@@ -169,18 +162,15 @@ notified(sel4cp_channel ch) {
         case 6:
             if (glob_xhci_sc != NULL) {
                 xhci_intr(glob_xhci_sc);
-				//printf("Back from xhci_intr\n");
             } else {
                 printf("FATAL: sc not defined");
             }
             sel4cp_irq_ack(ch);
-			//printf("exits irq\n");
             break;
             while (1) {
                 
             }
     }
-	//printf("break\n");
 }
 
 sel4cp_msginfo

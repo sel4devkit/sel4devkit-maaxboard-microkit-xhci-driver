@@ -116,6 +116,7 @@ init(void) {
     config_init();
     pipe_thread = false;
     cold = 0;
+
     // init
     printf("XHCI_STUB: dmapaddr = %p\n", dma_cp_paddr);
     xhci_root_intr_pointer = get_root_intr_methods();
@@ -131,8 +132,6 @@ init(void) {
     device_intr_pointer_other = (struct usbd_pipe_methods *) sel4cp_msginfo_get_label(addr);
     addr = sel4cp_ppcall(8, seL4_MessageInfo_new(0,0,0,0));
     intr_ptrs = (struct intr_ptrs_holder *) sel4cp_msginfo_get_label(addr);
-    /* memcpy(&xhci_root_intr_pointer, get_root_intr_methods(), sizeof(struct usbd_pipe_methods)); */
-    /* printf("xhci_stub received root_intr ptr %p\n", xhci_root_intr_pointer); */
 
     initialise_and_start_timer(timer_base);
 
@@ -156,26 +155,22 @@ init(void) {
     self_xhci->dv_private = sc_xhci;
 
     dwc3_fdt_attach(parent_xhci,self_xhci,aux_xhci);
-    printf("finished\n");
 
     struct usb_softc *usb_sc = kmem_alloc(sizeof(struct usb_softc),0);
     struct usbd_bus *sc_bus = kmem_alloc(sizeof(struct usbd_bus),0);
     device_t self = kmem_alloc(sizeof(device_t), 0);
     *sc_bus = glob_xhci_sc->sc_bus;
     sc_bus->ub_methods = glob_xhci_sc->sc_bus.ub_methods;
-    // sc_bus->ub_revision = USBREV_3_0;
     self->dv_unit = 1;
     self->dv_private = usb_sc;
     device_t parent = NULL;
     usb_attach(parent, self, sc_bus);
-    // int response  = bus_space_read_4(0, 0x38200020, 4);
-    // printf("Attempted bus_space_read_4: %08x\n", response);
 	usb_sc->sc_bus->ub_needsexplore = 1;
     printf("delaying\n");
     ms_delay(3000);
     printf("waited 3 secs\n");
     usb_discover(usb_sc);
-    printf("\nready\n");
+    printf("\nxHCI driver ready\n");
 }
 
 
