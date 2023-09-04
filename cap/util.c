@@ -1,3 +1,4 @@
+/* This work is Crown Copyright NCSC, 2023. */
 //TODO: vimdiff this file
 #include <lib/libkern/libkern.h>
 #include <sys/types.h>

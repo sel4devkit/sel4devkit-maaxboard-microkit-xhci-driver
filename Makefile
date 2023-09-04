@@ -54,7 +54,7 @@ IMAGES := xhci_stub.elf hardware.elf pipe_handler.elf software.elf mem_handler.e
 INC := $(BOARD_DIR)/include include/tinyalloc include/wrapper $(NETBSD_DIR)/sys $(NETBSD_DIR)/mach_include include/bus include/dma include/printf include/timer src/
 INC_PARAMS=$(foreach d, $(INC), -I$d)
 WARNINGS := -Wall -Wno-comment -Wno-return-type -Wno-unused-function -Wno-unused-value -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-pointer-sign
-CFLAGS := -mcpu=$(CPU) -mstrict-align -ffreestanding -g3 -O3 $(WARNINGS) $(INC_PARAMS) -I$(BOARD_DIR)/include -DSEL4  #-DSEL4_USB_DEBUG
+CFLAGS := -mcpu=$(CPU) -mstrict-align -ffreestanding -g3 -O3 $(WARNINGS) $(INC_PARAMS) -I$(BOARD_DIR)/include -DSEL4  -DSEL4_USB_DEBUG
 LDFLAGS := -L$(BOARD_DIR)/lib
 LIBS := -lsel4cp -Tsel4cp.ld
 

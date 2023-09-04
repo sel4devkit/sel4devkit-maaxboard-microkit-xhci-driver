@@ -1,3 +1,4 @@
+/* This work is Crown Copyright NCSC, 2023. */
 #include <sys/kmem.h>
 
 #include <sel4cp.h>

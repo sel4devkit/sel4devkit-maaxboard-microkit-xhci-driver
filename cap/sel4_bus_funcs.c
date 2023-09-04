@@ -1,3 +1,4 @@
+/* This work is Crown Copyright NCSC, 2023. */
 //TODO: vimdiff this file
 #include <sel4_bus_funcs.h>
 #include <machine/bus_defs.h>
