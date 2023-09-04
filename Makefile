@@ -19,10 +19,15 @@ ifeq ($(strip $(SEL4CP_CONFIG)),)
 $(error SEL4CP_CONFIG must be specified)
 endif
 
-TOOLCHAIN := aarch64-none-elf
+ifeq ($(strip $(SEL4CP_DIR)),)
+$(error SEL4CP_DIR must be specified)
+endif
 
-NETBSD_DIR := /home/jfelmeden/cp/sel4cp/example/maaxboard/xhci_stub/netbsd
-# ddd: ${NETBSD_DIR}/src/sys/machine
+ifeq ($(strip $(NETBSD_DIR)),)
+$(error NETBSD_DIR must be specified)
+endif
+
+TOOLCHAIN := aarch64-none-elf
 
 CPU := cortex-a53
 
@@ -46,7 +51,7 @@ SIMULATED_KBD_OBJS	:=  simulated_kbd.o printf.o tinyalloc.o
 BOARD_DIR := $(SEL4CP_SDK)/board/$(SEL4CP_BOARD)/$(SEL4CP_CONFIG)
 
 IMAGES := xhci_stub.elf hardware.elf pipe_handler.elf software.elf mem_handler.elf kbd_logger.elf simulated_kbd.elf
-INC := $(BOARD_DIR)/include include/tinyalloc include/wrapper netbsd/sys netbsd/mach_include include/bus include/dma include/printf include/timer src/
+INC := $(BOARD_DIR)/include include/tinyalloc include/wrapper $(NETBSD_DIR)/sys $(NETBSD_DIR)/mach_include include/bus include/dma include/printf include/timer src/
 INC_PARAMS=$(foreach d, $(INC), -I$d)
 WARNINGS := -Wall -Wno-comment -Wno-return-type -Wno-unused-function -Wno-unused-value -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-pointer-sign
 CFLAGS := -mcpu=$(CPU) -mstrict-align -ffreestanding -g3 -O3 $(WARNINGS) $(INC_PARAMS) -I$(BOARD_DIR)/include -DSEL4  #-DSEL4_USB_DEBUG
@@ -62,11 +67,11 @@ all: $(IMAGE_FILE)
 
 includes:
 	@mkdir -p ${NETBSD_DIR}/mach_include/machine
-	@ln -fs ${NETBSD_DIR}/sys/arch/evbarm/include/* netbsd/mach_include/machine/
+	@ln -fs ${NETBSD_DIR}/sys/arch/evbarm/include/* $(NETBSD_DIR)/mach_include/machine/
 	@mkdir -p ${NETBSD_DIR}/mach_include/arm
-	@ln -fs ${NETBSD_DIR}/sys/arch/arm/include/* netbsd/mach_include/arm/
+	@ln -fs ${NETBSD_DIR}/sys/arch/arm/include/* $(NETBSD_DIR)/mach_include/arm/
 	@mkdir -p ${NETBSD_DIR}/mach_include/aarch64
-	@ln -fs ${NETBSD_DIR}/sys/arch/arm/include/* netbsd/mach_include/aarch64/
+	@ln -fs ${NETBSD_DIR}/sys/arch/arm/include/* $(NETBSD_DIR)/mach_include/aarch64/
 
 $(BUILD_DIR)/%.o: src/%.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
@@ -74,76 +79,76 @@ $(BUILD_DIR)/%.o: src/%.c Makefile
 $(BUILD_DIR)/%.o: cap/%.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/usb.o: netbsd/sys/dev/usb/usb.c Makefile
+$(BUILD_DIR)/usb.o: $(NETBSD_DIR)/sys/dev/usb/usb.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/usbdi.o: netbsd/sys/dev/usb/usbdi.c Makefile
+$(BUILD_DIR)/usbdi.o: $(NETBSD_DIR)/sys/dev/usb/usbdi.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/usbdi_util.o: netbsd/sys/dev/usb/usbdi_util.c Makefile
+$(BUILD_DIR)/usbdi_util.o: $(NETBSD_DIR)/sys/dev/usb/usbdi_util.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/usb_mem.o: netbsd/sys/dev/usb/usb_mem.c Makefile
+$(BUILD_DIR)/usb_mem.o: $(NETBSD_DIR)/sys/dev/usb/usb_mem.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/usb_quirks.o: netbsd/sys/dev/usb/usb_quirks.c Makefile
+$(BUILD_DIR)/usb_quirks.o: $(NETBSD_DIR)/sys/dev/usb/usb_quirks.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/usb_subr.o: netbsd/sys/dev/usb/usb_subr.c Makefile
+$(BUILD_DIR)/usb_subr.o: $(NETBSD_DIR)/sys/dev/usb/usb_subr.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/usbroothub.o: netbsd/sys/dev/usb/usbroothub.c Makefile
+$(BUILD_DIR)/usbroothub.o: $(NETBSD_DIR)/sys/dev/usb/usbroothub.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/uts.o: netbsd/sys/dev/usb/uts.c Makefile
+$(BUILD_DIR)/uts.o: $(NETBSD_DIR)/sys/dev/usb/uts.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/uhid.o: netbsd/sys/dev/usb/uhid.c Makefile
+$(BUILD_DIR)/uhid.o: $(NETBSD_DIR)/sys/dev/usb/uhid.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/uhidev.o: netbsd/sys/dev/usb/uhidev.c Makefile
+$(BUILD_DIR)/uhidev.o: $(NETBSD_DIR)/sys/dev/usb/uhidev.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/uhub.o: netbsd/sys/dev/usb/uhub.c Makefile
+$(BUILD_DIR)/uhub.o: $(NETBSD_DIR)/sys/dev/usb/uhub.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/ukbd.o: netbsd/sys/dev/usb/ukbd.c Makefile
+$(BUILD_DIR)/ukbd.o: $(NETBSD_DIR)/sys/dev/usb/ukbd.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/ums.o: netbsd/sys/dev/usb/ums.c Makefile
+$(BUILD_DIR)/ums.o: $(NETBSD_DIR)/sys/dev/usb/ums.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/xhci.o: netbsd/sys/dev/usb/xhci.c Makefile
+$(BUILD_DIR)/xhci.o: $(NETBSD_DIR)/sys/dev/usb/xhci.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/subr_autoconf.o: netbsd/sys/kern/subr_autoconf.c Makefile
+$(BUILD_DIR)/subr_autoconf.o: $(NETBSD_DIR)/sys/kern/subr_autoconf.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/subr_device.o: netbsd/sys/kern/subr_device.c Makefile
+$(BUILD_DIR)/subr_device.o: $(NETBSD_DIR)/sys/kern/subr_device.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/kern_pmf.o: netbsd/sys/kern/kern_pmf.c Makefile
+$(BUILD_DIR)/kern_pmf.o: $(NETBSD_DIR)/sys/kern/kern_pmf.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/hid.o: netbsd/sys/dev/hid/hid.c Makefile
+$(BUILD_DIR)/hid.o: $(NETBSD_DIR)/sys/dev/hid/hid.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/hidkbdmap.o: netbsd/sys/dev/hid/hidkbdmap.c Makefile
+$(BUILD_DIR)/hidkbdmap.o: $(NETBSD_DIR)/sys/dev/hid/hidkbdmap.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/hidms.o: netbsd/sys/dev/hid/hidms.c Makefile
+$(BUILD_DIR)/hidms.o: $(NETBSD_DIR)/sys/dev/hid/hidms.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/dev_verbose.o: netbsd/sys/dev/dev_verbose.c Makefile
+$(BUILD_DIR)/dev_verbose.o: $(NETBSD_DIR)/sys/dev/dev_verbose.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/dwc3_fdt.o: netbsd/sys/dev/fdt/dwc3_fdt.c Makefile
+$(BUILD_DIR)/dwc3_fdt.o: $(NETBSD_DIR)/sys/dev/fdt/dwc3_fdt.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/imx8mq_usbphy.o: netbsd/sys/arch/arm/nxp/imx8mq_usbphy.c Makefile
+$(BUILD_DIR)/imx8mq_usbphy.o: $(NETBSD_DIR)/sys/arch/arm/nxp/imx8mq_usbphy.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/tpcalib.o: netbsd/sys/dev/wscons/tpcalib.c Makefile
+$(BUILD_DIR)/tpcalib.o: $(NETBSD_DIR)/sys/dev/wscons/tpcalib.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
 	
