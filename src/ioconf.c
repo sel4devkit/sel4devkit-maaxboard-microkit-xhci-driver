@@ -5,10 +5,14 @@
  * ioconf.c, from "XHCI_DEBUG"
  */
 
+//SEL4: commented out sections are devices that are not yet supported, but left in for future use
+
 #include <sys/param.h>
 #include <sys/conf.h>
 #include <sys/device.h>
-// #include <sys/mount.h>
+#ifndef SEL4
+#include <sys/mount.h>
+#endif
 
 static const struct cfiattrdata tps65217pmiccf_iattrdata = {
 	"tps65217pmic", 0, {
