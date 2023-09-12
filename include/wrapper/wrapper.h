@@ -1,7 +1,6 @@
 /* This work is Crown Copyright NCSC, 2023. */
 #pragma once
 
-// #include <sys/param.h>
 #include <sys/bus.h>
 #include <sys/device.h>
 
@@ -9,7 +8,6 @@
 #include <dev/usb/usb.h>
 #include <dev/usb/usbdi.h>
 #include <dev/usb/usbdivar.h>
-// #include <dev/usb/usb_mem.h>
 #include <dev/usb/xhcireg.h>
 #include <dev/usb/xhcivar.h>
 

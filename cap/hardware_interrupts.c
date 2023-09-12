@@ -30,6 +30,8 @@
 
 #include <dev/fdt/fdtvar.h>
 
+#define INTR_DEBUG 1
+
 uintptr_t xhci_base;
 uintptr_t dma_base;
 uintptr_t heap_base;
@@ -48,12 +50,16 @@ bool pipe_thread;
 
 uint32_t xhci_read_print_4(bus_space_tag_t tag, bus_space_handle_t bsh, bus_size_t size){
     uint32_t busval = bus_space_read_4(tag, bsh, size);
-    // printf("xhci: Read4: Handle: %lx, Offset: %lx. Result: %08x\n", bsh, size, busval);
+#ifdef INTR_DEBUG
+    printf("xhci: Read4: Handle: %lx, Offset: %lx. Result: %08x\n", bsh, size, busval);
+#endif
     return busval;
 }
 
 void xhci_write_print_4(bus_space_tag_t tag, bus_space_handle_t bsh, bus_size_t size, uint32_t val){
-    // printf("xhci: Wrte4: Handle: %lx, Offset: %lx.  Value: %08x\n", bsh, size, val);
+#ifdef INTR_DEBUG
+    printf("xhci: Wrte4: Handle: %lx, Offset: %lx.  Value: %08x\n", bsh, size, val);
+#endif
     bus_space_write_4(tag, bsh, size, val);
 }
 
@@ -91,7 +97,11 @@ xhci_intr1(struct xhci_softc * const sc)
 	uint32_t iman;
 
 
+#ifdef INTR_DEBUG
 	usbsts = xhci_op_read_4(sc, XHCI_USBSTS);
+	printf("USBSTS 0x%08x\n", usbsts);
+#endif
+
 	if ((usbsts & (XHCI_STS_HSE | XHCI_STS_EINT | XHCI_STS_PCD |
 	    XHCI_STS_HCE)) == 0) {
 		printf("ignored intr not for this device\n");
@@ -106,22 +116,17 @@ xhci_intr1(struct xhci_softc * const sc)
 	 */
 	xhci_op_write_4(sc, XHCI_USBSTS, usbsts & XHCI_STS_RSVDP0);
 
-#ifdef XHCI_DEBUG
-	/* usbsts = xhci_op_read_4(sc, XHCI_USBSTS); */
-	/* DPRINTFN(16, "USBSTS 0x%08jx", usbsts, 0, 0, 0); */
+#ifdef INTR_DEBUG
+	usbsts = xhci_op_read_4(sc, XHCI_USBSTS);
+	printf("USBSTS 0x%08x\n", usbsts);
 #endif
 
 	iman = xhci_rt_read_4(sc, XHCI_IMAN(0));
-	/* DPRINTFN(16, "IMAN0 0x%08jx", iman, 0, 0, 0); */
+#ifdef INTR_DEBUG
+	printf("IMAN0 0x%08x\n", iman);
+#endif
 	iman |= XHCI_IMAN_INTR_PEND;
 	xhci_rt_write_4(sc, XHCI_IMAN(0), iman);
-
-#ifdef XHCI_DEBUG
-	/* iman = xhci_rt_read_4(sc, XHCI_IMAN(0)); */
-	/* DPRINTFN(16, "IMAN0 0x%08jx", iman, 0, 0, 0); */
-	/* usbsts = xhci_op_read_4(sc, XHCI_USBSTS); */
-	/* DPRINTFN(16, "USBSTS 0x%08jx", usbsts, 0, 0, 0); */
-#endif
 
 	return 1;
 }

@@ -13,7 +13,6 @@
 #include <sys/device.h>
 #include <sys/device_impl.h>
 #include <sys/intr.h>
-// #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/kmem.h>
 

@@ -81,7 +81,6 @@ uintptr_t software_heap;
 /* Pointers to shared_ringbuffers */
 ring_handle_t *kbd_buffer_ring;
 
-// TODO: put these in a header file so can change it in a single place for a platform
 int phy_setup() {
     struct imx8mq_usbphy_softc *sc_usbphy;
 	sc_usbphy = kmem_alloc(sizeof(*sc_usbphy), 0);
@@ -100,19 +99,6 @@ int phy_setup() {
 
 void
 init(void) {
-    if (BUS_DEBUG) {
-        uint32_t read_offset    = 0xc120;
-        // uint32_t write_offset   = 0xc2c0;
-
-        sel4cp_dbg_puts("Starting read and write tests\n");
-        /* read test */
-        printf("xhci_base: %p\n", xhci_base);
-        uint32_t response;
-        response  = bus_space_read_1(0, xhci_base, read_offset);
-        printf("Attempted bus_space_read_1: %p\n", response);
-        response  = bus_space_read_4(0, xhci_base, 0xc120);
-        printf("Attempted bus_space_read_4: %p\n", response);
-    }
 
     config_init();
     pipe_thread = false;
@@ -120,17 +106,17 @@ init(void) {
 
     // init
     printf("XHCI_STUB: dmapaddr = %p\n", dma_cp_paddr);
-    xhci_root_intr_pointer = get_root_intr_methods();
-    xhci_bus_methods_ptr = get_bus_methods();
-    device_ctrl_pointer = get_device_methods();
+    xhci_bus_methods_ptr = (struct usbd_bus_methods *) get_bus_methods();
+    xhci_root_intr_pointer = (uintptr_t) get_root_intr_methods();
+    device_ctrl_pointer = (uintptr_t) get_device_methods();
     sel4cp_msginfo addr = sel4cp_ppcall(1, seL4_MessageInfo_new((uint64_t) xhci_root_intr_pointer,1,0,0));
-    xhci_root_intr_pointer_other = (struct usbd_pipe_methods *) sel4cp_msginfo_get_label(addr);
-    device_ctrl_pointer = get_device_methods();
+    xhci_root_intr_pointer_other = sel4cp_msginfo_get_label(addr);
+    device_ctrl_pointer = (uintptr_t) get_device_methods();
     addr = sel4cp_ppcall(3, seL4_MessageInfo_new((uint64_t) device_ctrl_pointer,1,0,0));
-    device_ctrl_pointer_other = (struct usbd_pipe_methods *) sel4cp_msginfo_get_label(addr);
-    device_intr_pointer = get_device_intr_methods();
+    device_ctrl_pointer_other = (uintptr_t) sel4cp_msginfo_get_label(addr);
+    device_intr_pointer = (uintptr_t) get_device_intr_methods();
     addr = sel4cp_ppcall(4, seL4_MessageInfo_new((uint64_t) device_intr_pointer,1,0,0));
-    device_intr_pointer_other = (struct usbd_pipe_methods *) sel4cp_msginfo_get_label(addr);
+    device_intr_pointer_other = (uintptr_t) sel4cp_msginfo_get_label(addr);
     addr = sel4cp_ppcall(8, seL4_MessageInfo_new(0,0,0,0));
     intr_ptrs = (struct intr_ptrs_holder *) sel4cp_msginfo_get_label(addr);
 
@@ -167,9 +153,7 @@ init(void) {
     device_t parent = NULL;
     usb_attach(parent, self, sc_bus);
 	usb_sc->sc_bus->ub_needsexplore = 1;
-    printf("delaying\n");
-    ms_delay(3000);
-    printf("waited 3 secs\n");
+
     usb_discover(usb_sc);
     printf("\nxHCI driver ready\n");
 }
@@ -186,8 +170,7 @@ protected(sel4cp_channel ch, sel4cp_msginfo msginfo) {
     switch (ch) {
         case 1:
             // return addr of root_intr_methods
-            printf("got root_intr pointer\n");
-            xhci_root_intr_pointer = (struct usbd_pipe_methods *) sel4cp_msginfo_get_label(msginfo);
+            xhci_root_intr_pointer = (uintptr_t) sel4cp_msginfo_get_label(msginfo);
             break;
         default:
             printf("xhci_stub received protected unexpected channel\n");
