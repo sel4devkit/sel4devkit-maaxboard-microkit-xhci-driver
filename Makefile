@@ -36,7 +36,8 @@ LD := $(TOOLCHAIN)-ld
 AS := $(TOOLCHAIN)-as
 MICROKIT_TOOL ?= $(MICROKIT_SDK)/bin/microkit
 
-NETBSD_SRC			:=  dev_verbose.o subr_device.o subr_autoconf.o usbdi_util.o usbdi.o usbroothub.o sel4_bus_funcs.o dma.o usb.o usb_quirks.o usb_subr.o xhci.o usb_mem.o uhub.o hid.o uhidev.o ukbd.o ums.o uts.o hidms.o hidkbdmap.o ioconf.o tpcalib.o uhid.o
+# NETBSD_SRC			:=  dev_verbose.o subr_device.o subr_autoconf.o usbdi_util.o usbdi.o usbroothub.o sel4_bus_funcs.o dma.o usb.o usb_quirks.o usb_subr.o xhci.o usb_mem.o uhub.o hid.o uhidev.o ukbd.o ums.o uts.o hidms.o hidkbdmap.o ioconf.o tpcalib.o uhid.o
+NETBSD_SRC			:=  dev_verbose.o subr_device.o subr_autoconf.o usbdi_util.o usbdi.o usbroothub.o sel4_bus_funcs.o dma.o usb.o usb_quirks.o usb_subr.o xhci.o usb_mem.o uhub.o hid.o uhidev.o ukbd.o ums.o uts.o hidms.o hidkbdmap.o ioconf.o tpcalib.o uhid.o umass.o umass_quirks.o umass_scsipi.o scsipi_base.o scsipiconf.o scsiconf.o scsi_subr.o # scsipi_ioctl.o # ugen.o tty_subr.o kern_event.o sys_select.o //not implemented yet
 UTILS				:= 	tinyalloc.o printf.o util.o timer.o
 
 XHCI_STUB_OBJS 		:=  xhci_stub.o $(NETBSD_SRC) imx8mq_usbphy.o dwc3_fdt.o shared_ringbuffer.o $(UTILS)
@@ -97,6 +98,30 @@ $(BUILD_DIR)/usb_subr.o: $(NETBSD_DIR)/sys/dev/usb/usb_subr.c Makefile
 
 $(BUILD_DIR)/usbroothub.o: $(NETBSD_DIR)/sys/dev/usb/usbroothub.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/umass.o: netbsd/src/sys/dev/usb/umass.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/umass_scsipi.o: netbsd/src/sys/dev/usb/umass_scsipi.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/umass_quirks.o: netbsd/src/sys/dev/usb/umass_quirks.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/scsiconf.o: netbsd/src/sys/dev/scsipi/scsiconf.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/scsi_subr.o: netbsd/src/sys/dev/scsipi/scsi_subr.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+	
+$(BUILD_DIR)/scsipi_base.o: netbsd/src/sys/dev/scsipi/scsipi_base.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/scsipiconf.o: netbsd/src/sys/dev/scsipi/scsipiconf.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+# $(BUILD_DIR)/scsipi_ioctl.o: netbsd/src/sys/dev/scsipi/scsipi_ioctl.c Makefile
+# 	$(CC) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/uts.o: $(NETBSD_DIR)/sys/dev/usb/uts.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
