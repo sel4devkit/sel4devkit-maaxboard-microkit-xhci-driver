@@ -2380,7 +2380,17 @@ static const struct cfparent pspec94 = {
 
 struct cfdata cfdata[] = {
     /* driver           attachment    unit state      loc   flags  pspec */
-// /*184: usb* at usbus? */
+/*168: scsibus* at scsi? channel -1 */
+    { "scsibus",	"scsibus",	 0, STAR, loc+526,      0, &pspec51 },
+/*169: scsibus* at umass? channel -1 */
+    { "scsibus",	"scsibus",	 0, STAR, loc+527,      0, &pspec63 },
+/*170: scsibus* at usscanner? channel -1 */
+    { "scsibus",	"scsibus",	 0, STAR, loc+528,      0, &pspec85 },
+/*171: atapibus* at atapi? */
+    { "atapibus",	"atapibus",	 0, STAR,    NULL,      0, &pspec37 },
+/*172: atapibus* at umass? */
+    { "atapibus",	"atapibus",	 0, STAR,    NULL,      0, &pspec64 },
+/*184: usb* at usbus? */
     { "usb",		"usb",		 0, STAR,    NULL,      0, &pspec49 },
 /*185: uhub* at usb? */
     { "uhub",		"uroothub",	 0, STAR,    NULL,      0, &pspec53 },
@@ -2395,10 +2405,15 @@ struct cfdata cfdata[] = {
 /*216: ums* at uhidev? reportid -1 */
     { "ums",		"ums",		 0, STAR, loc+551,      0, &pspec56 },
 /*217: uts* at uhidev? reportid -1 */
-     { "uts",		"uts",		 0, STAR, loc+552,      0, &pspec56 }, 
+    { "uts",		"uts",		 0, STAR, loc+552,      0, &pspec56 }, 
+/*221: umass* at uhub? port -1 configuration -1 interface -1 vendor -1 product -1 release -1 */
+    { "umass",		"umass",	 0, STAR, loc+432,      0, &pspec55 },
     { NULL,		NULL,		 0,    0,    NULL,      0, NULL }
 };
 
+// static struct cfattach * const scsibus_cfattachinit[] = {
+// 	&scsibus_ca, NULL
+// };
 static struct cfattach * const usb_cfattachinit[] = {
 	&usb_ca, NULL
 };
@@ -2419,9 +2434,13 @@ static struct cfattach * const ums_cfattachinit[] = {
 };
 static struct cfattach * const uts_cfattachinit[] = {
 	&uts_ca, NULL
-}; 
+};
+static struct cfattach * const umass_cfattachinit[] = {
+	&umass_ca, NULL
+};
 
 const struct cfattachinit cfattachinit[] = {
+	{ "scsibus", scsibus_cfattachinit },
 	{ "usb", usb_cfattachinit },
 	{ "uhub", uhub_cfattachinit },
 	{ "uhidev", uhidev_cfattachinit },
@@ -2429,6 +2448,7 @@ const struct cfattachinit cfattachinit[] = {
 	{ "ukbd", ukbd_cfattachinit },
 	{ "ums", ums_cfattachinit },
 	{ "uts", uts_cfattachinit },
+	{ "umass", umass_cfattachinit },
 	{ NULL, NULL }
 };
 
