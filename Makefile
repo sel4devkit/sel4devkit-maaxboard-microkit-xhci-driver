@@ -7,20 +7,20 @@ ifeq ($(strip $(BUILD_DIR)),)
 $(error BUILD_DIR must be specified)
 endif
 
-ifeq ($(strip $(SEL4CP_SDK)),)
-$(error SEL4CP_SDK must be specified)
+ifeq ($(strip $(MICROKIT_SDK)),)
+$(error MICROKIT_SDK must be specified)
 endif
 
-ifeq ($(strip $(SEL4CP_BOARD)),)
-$(error SEL4CP_BOARD must be specified)
+ifeq ($(strip $(MICROKIT_BOARD)),)
+$(error MICROKIT_BOARD must be specified)
 endif
 
-ifeq ($(strip $(SEL4CP_CONFIG)),)
-$(error SEL4CP_CONFIG must be specified)
+ifeq ($(strip $(MICROKIT_CONFIG)),)
+$(error MICROKIT_CONFIG must be specified)
 endif
 
-ifeq ($(strip $(SEL4CP_DIR)),)
-$(error SEL4CP_DIR must be specified)
+ifeq ($(strip $(MICROKIT_DIR)),)
+$(error MICROKIT_DIR must be specified)
 endif
 
 ifeq ($(strip $(NETBSD_DIR)),)
@@ -34,7 +34,7 @@ CPU := cortex-a53
 CC := $(TOOLCHAIN)-gcc
 LD := $(TOOLCHAIN)-ld
 AS := $(TOOLCHAIN)-as
-SEL4CP_TOOL ?= $(SEL4CP_SDK)/bin/sel4cp
+MICROKIT_TOOL ?= $(MICROKIT_SDK)/bin/microkit
 
 NETBSD_SRC			:=  dev_verbose.o subr_device.o subr_autoconf.o usbdi_util.o usbdi.o usbroothub.o sel4_bus_funcs.o dma.o usb.o usb_quirks.o usb_subr.o xhci.o usb_mem.o uhub.o hid.o uhidev.o ukbd.o ums.o uts.o hidms.o hidkbdmap.o ioconf.o tpcalib.o uhid.o
 UTILS				:= 	tinyalloc.o printf.o util.o timer.o
@@ -46,7 +46,7 @@ MEM_OBJS			:=  mem_handler.o tinyalloc.o printf.o
 KBD_LOGGER_OBJS 	:=  kbd_logger.o hidkbdmap.o shared_ringbuffer.o printf.o tinyalloc.o
 SIMULATED_KBD_OBJS	:=  simulated_kbd.o printf.o tinyalloc.o
 
-BOARD_DIR := $(SEL4CP_SDK)/board/$(SEL4CP_BOARD)/$(SEL4CP_CONFIG)
+BOARD_DIR := $(MICROKIT_SDK)/board/$(MICROKIT_BOARD)/$(MICROKIT_CONFIG)
 
 IMAGES := xhci_stub.elf hardware.elf software.elf mem_handler.elf kbd_logger.elf simulated_kbd.elf
 INC := $(BOARD_DIR)/include include/tinyalloc include/wrapper $(NETBSD_DIR)/sys $(NETBSD_DIR)/mach_include include/bus include/dma include/printf include/timer src/
@@ -54,7 +54,7 @@ INC_PARAMS=$(foreach d, $(INC), -I$d)
 WARNINGS := -Wall -Wno-comment -Wno-return-type -Wno-unused-function -Wno-unused-value -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-pointer-sign
 CFLAGS := -mcpu=$(CPU) -mstrict-align -ffreestanding -g3 -O3 $(WARNINGS) $(INC_PARAMS) -I$(BOARD_DIR)/include -DSEL4  -DSEL4_USB_DEBUG
 LDFLAGS := -L$(BOARD_DIR)/lib
-LIBS := -lsel4cp -Tsel4cp.ld
+LIBS := -lmicrokit -Tmicrokit.ld
 
 IMAGE_FILE = $(BUILD_DIR)/loader.img
 REPORT_FILE = $(BUILD_DIR)/report.txt
@@ -172,7 +172,7 @@ $(BUILD_DIR)/simulated_kbd.elf: $(addprefix $(BUILD_DIR)/, $(SIMULATED_KBD_OBJS)
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 
 $(IMAGE_FILE) $(REPORT_FILE): $(addprefix $(BUILD_DIR)/, $(IMAGES)) xhci_stub.system
-	$(SEL4CP_TOOL) xhci_stub.system --search-path $(BUILD_DIR) --board $(SEL4CP_BOARD) --config $(SEL4CP_CONFIG) -o $(IMAGE_FILE) -r $(REPORT_FILE)
+	$(MICROKIT_TOOL) xhci_stub.system --search-path $(BUILD_DIR) --board $(MICROKIT_BOARD) --config $(MICROKIT_CONFIG) -o $(IMAGE_FILE) -r $(REPORT_FILE)
 
 # clean
 clean:

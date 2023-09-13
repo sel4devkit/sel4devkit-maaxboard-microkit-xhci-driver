@@ -1,5 +1,5 @@
 /* This work is Crown Copyright NCSC, 2023. */
-#include <sel4cp.h>
+#include <microkit.h>
 #include <printf.h>
 
 #include <machine/bus_funcs.h>

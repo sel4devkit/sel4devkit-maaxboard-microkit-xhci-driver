@@ -1,5 +1,5 @@
 /* This work is Crown Copyright NCSC, 2023. */
-#include <sel4cp.h>
+#include <microkit.h>
 #include <printf.h>
 
 #include <sys/kmem.h>
@@ -14,18 +14,18 @@ init(void) {
 }
 
 void
-notified(sel4cp_channel ch) {
+notified(microkit_channel ch) {
     printf("simulated_kbd notified\n");
 }
 
 
-sel4cp_msginfo
-protected(sel4cp_channel ch, sel4cp_msginfo msginfo) {
+microkit_msginfo
+protected(microkit_channel ch, microkit_msginfo msginfo) {
     switch (ch) {
         case 14:
-            kbd_mem_write = (char*) sel4cp_msginfo_get_label(msginfo);
+            kbd_mem_write = (char*) microkit_msginfo_get_label(msginfo);
             *kbd_mem_write = 'A';
-            sel4cp_notify(15);
+            microkit_notify(15);
             break;
         default:
             printf("kbd_logger received protected unexpected channel\n");

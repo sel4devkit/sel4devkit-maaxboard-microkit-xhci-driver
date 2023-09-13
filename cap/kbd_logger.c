@@ -1,7 +1,7 @@
 /* This work is Crown Copyright NCSC, 2023. */
 #include <sys/kmem.h>
 
-#include <sel4cp.h>
+#include <microkit.h>
 #include <printf.h>
 #include <shared_ringbuffer.h>
 #include <tinyalloc.h>
@@ -213,7 +213,7 @@ init(void) {
 }
 
 void
-notified(sel4cp_channel ch) {
+notified(microkit_channel ch) {
     switch(ch) {
         case(16):
             printf("kbd_logger notified by similated_kbd. Data   : %c\n", *kbd_mem_write);

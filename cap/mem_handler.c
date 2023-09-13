@@ -1,5 +1,5 @@
 /* This work is Crown Copyright NCSC, 2023. */
-#include <sel4cp.h>
+#include <microkit.h>
 #include <printf.h>
 #include <tinyalloc.h>
 
@@ -20,29 +20,29 @@ init(void) {
 
 
 void
-notified(sel4cp_channel ch) {
+notified(microkit_channel ch) {
 }
 
-sel4cp_msginfo
-protected(sel4cp_channel ch, sel4cp_msginfo msginfo) {
+microkit_msginfo
+protected(microkit_channel ch, microkit_msginfo msginfo) {
     switch (ch) {
         case 0:
         case 5:
         case 10:
         case 20:
-            return seL4_MessageInfo_new((uint64_t) ta_alloc(sel4cp_msginfo_get_label(msginfo)),1,0,0);
+            return seL4_MessageInfo_new((uint64_t) ta_alloc(microkit_msginfo_get_label(msginfo)),1,0,0);
             break;
         case 1:
         case 6:
         case 11:
         case 21:
-            return seL4_MessageInfo_new((uint64_t) ta_calloc(sel4cp_msginfo_get_label(msginfo), 1), 1, 0, 0);
+            return seL4_MessageInfo_new((uint64_t) ta_calloc(microkit_msginfo_get_label(msginfo), 1), 1, 0, 0);
             break;
         case 2:
         case 7:
         case 12:
         case 22:
-            return seL4_MessageInfo_new(ta_free((void*)sel4cp_msginfo_get_label(msginfo)), 1, 0, 0);
+            return seL4_MessageInfo_new(ta_free((void*)microkit_msginfo_get_label(msginfo)), 1, 0, 0);
             break;
         default:
             printf("Unexpected channel mem_handler %d\n", ch);
