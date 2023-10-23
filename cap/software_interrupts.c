@@ -92,6 +92,7 @@ notified(microkit_channel ch) {
         case 7:
             if (glob_xhci_sc != NULL) {
                 xhci_softintr(&glob_xhci_sc->sc_bus);
+                microkit_notify(17); //discover call
             } else {
                 printf("FATAL: softintr sc not defined");
             }

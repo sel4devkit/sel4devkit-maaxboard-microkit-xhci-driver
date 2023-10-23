@@ -77,24 +77,10 @@ uintptr_t ta_limit;
 uintptr_t timer_base;
 uintptr_t software_heap;
 
+struct usb_softc *usb_sc, *usb_sc2;
+
 /* Pointers to shared_ringbuffers */
 ring_handle_t *kbd_buffer_ring;
-
-int phy_setup() {
-    struct imx8mq_usbphy_softc *sc_usbphy;
-	sc_usbphy = kmem_alloc(sizeof(*sc_usbphy), 0);
-    device_t parent_usbphy = NULL;
-    device_t self_usbphy = kmem_alloc(sizeof(device_t), 0);
-    void *aux_usbphy = kmem_alloc(sizeof(struct fdt_attach_args), 0);
-	sc_usbphy->sc_bsh = 0x382f0040;
-	sc_usbphy->sc_bst = kmem_alloc(sizeof(bus_space_tag_t), 0);
-	self_usbphy->dv_private = sc_usbphy;
-	imx8mq_usbphy_attach(parent_usbphy, self_usbphy,aux_usbphy);
-
-
-    imx8mq_usbphy_enable(self_usbphy, NULL, true); //imx8 doesn't need priv 
-    return 0;
-}
 
 void
 init(void) {
@@ -126,7 +112,6 @@ init(void) {
     device_t parent_xhci = NULL;
     kbd_buffer_ring = kmem_alloc(sizeof(*kbd_buffer_ring), 0);
 
-    phy_setup();
     device_t self_xhci = kmem_alloc(sizeof(device_t), 0);
     void *aux_xhci = kmem_alloc(sizeof(struct fdt_attach_args), 0);
 
@@ -142,18 +127,27 @@ init(void) {
 
     dwc3_fdt_attach(parent_xhci,self_xhci,aux_xhci);
 
-    struct usb_softc *usb_sc = kmem_alloc(sizeof(struct usb_softc),0);
-    struct usbd_bus *sc_bus = kmem_alloc(sizeof(struct usbd_bus),0);
+    usb_sc = kmem_alloc(sizeof(struct usb_softc),0);
     device_t self = kmem_alloc(sizeof(device_t), 0);
-    *sc_bus = glob_xhci_sc->sc_bus;
-    sc_bus->ub_methods = glob_xhci_sc->sc_bus.ub_methods;
     self->dv_unit = 1;
     self->dv_private = usb_sc;
-    device_t parent = NULL;
-    usb_attach(parent, self, sc_bus);
-	usb_sc->sc_bus->ub_needsexplore = 1;
+    usb_sc->sc_bus = &glob_xhci_sc->sc_bus;
+    usb_attach(self_xhci, self, &glob_xhci_sc->sc_bus);
 
-    usb_discover(usb_sc);
+    usb_sc2 = kmem_alloc(sizeof(struct usb_softc),0);
+    struct usbd_bus *sc_bus2 = kmem_alloc(sizeof(struct usbd_bus),0);
+    device_t self2 = kmem_alloc(sizeof(device_t), 0);
+    *sc_bus2 = glob_xhci_sc->sc_bus2;
+    sc_bus2->ub_methods = glob_xhci_sc->sc_bus2.ub_methods;
+    self2->dv_private = usb_sc2;
+    self2->dv_unit = 1;
+    usb_sc2->sc_bus = sc_bus2;
+    usb_attach(self_xhci, self2, sc_bus2);
+
+    // assert initial explore
+	usb_sc->sc_bus->ub_needsexplore = 1;
+	usb_sc2->sc_bus->ub_needsexplore = 1;
+
     printf("\nxHCI driver ready\n");
 }
 
@@ -162,6 +156,17 @@ init(void) {
 void
 notified(microkit_channel ch)
 {
+    switch (ch) {
+        case 17: // hotplug
+            // do a discover
+            if (usb_sc->sc_bus->ub_needsexplore)
+                usb_discover(usb_sc);
+            if (usb_sc2->sc_bus->ub_needsexplore)
+                usb_discover(usb_sc2);
+            break;
+        default:
+            printf("xhci_stub received notification unexpected channel\n");
+    }
 }
 
 microkit_msginfo
