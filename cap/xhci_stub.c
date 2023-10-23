@@ -159,10 +159,16 @@ notified(microkit_channel ch)
     switch (ch) {
         case 17: // hotplug
             // do a discover
-            if (usb_sc->sc_bus->ub_needsexplore)
+            if (usb_sc->sc_bus->ub_needsexplore) {
+                printf("Discover on USB3...\n");
                 usb_discover(usb_sc);
-            if (usb_sc2->sc_bus->ub_needsexplore)
+                printf("USB3 discover finished\n");
+            }
+            if (usb_sc2->sc_bus->ub_needsexplore) {
+                printf("Discover on USB2...\n");
                 usb_discover(usb_sc2);
+                printf("USB2 discover finished\n");
+            }
             break;
         default:
             printf("xhci_stub received notification unexpected channel\n");

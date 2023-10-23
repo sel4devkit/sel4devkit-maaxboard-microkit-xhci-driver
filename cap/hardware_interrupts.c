@@ -30,7 +30,7 @@
 
 #include <dev/fdt/fdtvar.h>
 
-#define INTR_DEBUG 1
+/* #define INTR_DEBUG */
 
 uintptr_t xhci_base;
 uintptr_t dma_base;
@@ -97,8 +97,8 @@ xhci_intr1(struct xhci_softc * const sc)
 	uint32_t iman;
 
 
-#ifdef INTR_DEBUG
 	usbsts = xhci_op_read_4(sc, XHCI_USBSTS);
+#ifdef INTR_DEBUG
 	printf("USBSTS 0x%08x\n", usbsts);
 #endif
 
