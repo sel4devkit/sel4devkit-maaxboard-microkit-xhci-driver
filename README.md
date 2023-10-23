@@ -50,11 +50,7 @@ In future we intend to support the following devices:
 - Mass storage support in progress (built but requires testing)
 
 ## TODO:
-- Neaten up code sooner rather than later
-    - Look at CMake now
-    - Platform headers for future proofing
-    - Headers for things like heap size and heap base
-- Setup condition variables
+- Condition variables (?)
 - More devices:
     - Mass storage
     - ~~Touchscreen~~ DONE
