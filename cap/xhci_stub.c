@@ -28,6 +28,7 @@
 #include <sys/device.h>
 #include <machine/types.h>
 #include <sel4_bus_funcs.h>
+#include <libfdt.h>
 
 #include <lib/libkern/libkern.h>
 #include <dev/fdt/fdtvar.h>
@@ -84,40 +85,63 @@ ring_handle_t *kbd_buffer_ring;
 
 void
 init(void) {
+    //initialise autoconf data structures
+    config_init(); 
 
-    config_init();
     pipe_thread = false;
     cold = 0;
 
-    // init
-    printf("XHCI_STUB: dmapaddr = %p\n", dma_cp_paddr);
-    xhci_bus_methods_ptr = (struct usbd_bus_methods *) get_bus_methods();
-    xhci_root_intr_pointer = (uintptr_t) get_root_intr_methods();
-    device_ctrl_pointer = (uintptr_t) get_device_methods();
-    microkit_msginfo addr = microkit_ppcall(1, seL4_MessageInfo_new((uint64_t) xhci_root_intr_pointer,1,0,0));
-    xhci_root_intr_pointer_other = microkit_msginfo_get_label(addr);
-    device_ctrl_pointer = (uintptr_t) get_device_methods();
-    addr = microkit_ppcall(3, seL4_MessageInfo_new((uint64_t) device_ctrl_pointer,1,0,0));
-    device_ctrl_pointer_other = (uintptr_t) microkit_msginfo_get_label(addr);
-    device_intr_pointer = (uintptr_t) get_device_intr_methods();
-    addr = microkit_ppcall(4, seL4_MessageInfo_new((uint64_t) device_intr_pointer,1,0,0));
-    device_intr_pointer_other = (uintptr_t) microkit_msginfo_get_label(addr);
-    addr = microkit_ppcall(8, seL4_MessageInfo_new(0,0,0,0));
-    intr_ptrs = (struct intr_ptrs_holder *) microkit_msginfo_get_label(addr);
+    // initialise structures. Communicate with software interrupt pd to get back all required data structures
+    xhci_bus_methods_ptr            = (struct usbd_bus_methods *) get_bus_methods();
+    intr_ptrs                       = (struct intr_ptrs_holder *) microkit_msginfo_get_label(microkit_ppcall(8, seL4_MessageInfo_new(0,0,0,0)));
+    xhci_root_intr_pointer          = (uintptr_t) get_root_intr_methods();
+    device_ctrl_pointer             = (uintptr_t) get_device_methods();
+    device_intr_pointer             = (uintptr_t) get_device_intr_methods();
+    xhci_root_intr_pointer_other    = (uintptr_t) microkit_msginfo_get_label(microkit_ppcall(1, seL4_MessageInfo_new((uint64_t) xhci_root_intr_pointer,1,0,0)));
+    device_ctrl_pointer_other       = (uintptr_t) microkit_msginfo_get_label(microkit_ppcall(3, seL4_MessageInfo_new((uint64_t) device_ctrl_pointer,1,0,0)));
+    device_intr_pointer_other       = (uintptr_t) microkit_msginfo_get_label(microkit_ppcall(4, seL4_MessageInfo_new((uint64_t) device_intr_pointer,1,0,0)));
+    uintptr_t fdt = microkit_msginfo_get_label(microkit_ppcall(44, seL4_MessageInfo_new(0,0,0,0)));
+    printf("fdt magic = 0x%x\n", fdt_magic(fdt));
 
+    fdtbus_init(fdt);
+
+	int offset = -1;
+
+    offset = fdt_next_node(fdt, offset, NULL);
+    int dwc3_phandle = fdtbus_offset2phandle(offset);
+    bus_size_t addr, size;
+    printf("Traversing FDT to find dwc3 node at 0x%x...\n", xhci_base);
+    while (addr != xhci_base) {
+        offset = fdt_next_node(fdt, offset, NULL);
+        if (offset < 0) {
+            if (offset == -FDT_ERR_NOTFOUND) {
+                printf("FATAL ERROR: no dwc3 node at 0x%x. Exiting.\n", xhci_base);
+                return;
+            }
+        }
+        dwc3_phandle = fdtbus_offset2phandle(offset);
+        fdtbus_get_reg(dwc3_phandle, 0, &addr, &size);
+    }
+    printf("XHCI_STUB: dwc3_phandle = %x\n", dwc3_phandle);
+    printf("addr = 0x%x, size = 0x%x\n", addr, size);
+
+    // offset = -1;
     initialise_and_start_timer(timer_base);
 
     sel4_dma_init(dma_cp_paddr, dma_cp_vaddr, dma_cp_vaddr + 0x200000);
 
+    // setup xhci devices + tell software PD memory locations
     device_t parent_xhci = NULL;
     kbd_buffer_ring = kmem_alloc(sizeof(*kbd_buffer_ring), 0);
 
     device_t self_xhci = kmem_alloc(sizeof(device_t), 0);
-    void *aux_xhci = kmem_alloc(sizeof(struct fdt_attach_args), 0);
+    struct fdt_attach_args *aux_xhci = kmem_alloc(sizeof(struct fdt_attach_args), 0);
+
+    aux_xhci->faa_phandle = dwc3_phandle;
 
     struct xhci_softc *sc_xhci = kmem_alloc(sizeof(struct xhci_softc), 0);
     glob_xhci_sc = sc_xhci;
-    sc_xhci->sc_ioh=0x38200000;
+    sc_xhci->sc_ioh=xhci_base;
     microkit_ppcall(0, seL4_MessageInfo_new((uint64_t) sc_xhci,1,0,0));
     microkit_ppcall(2, seL4_MessageInfo_new((uint64_t) sc_xhci,1,0,0));
 	bus_space_tag_t iot = kmem_alloc(sizeof(bus_space_tag_t), 0);
@@ -126,28 +150,31 @@ init(void) {
     self_xhci->dv_private = sc_xhci;
 
     dwc3_fdt_attach(parent_xhci,self_xhci,aux_xhci);
-
-    usb_sc = kmem_alloc(sizeof(struct usb_softc),0);
-    device_t self = kmem_alloc(sizeof(device_t), 0);
-    self->dv_unit = 1;
-    self->dv_private = usb_sc;
-    usb_sc->sc_bus = &glob_xhci_sc->sc_bus;
+    // attach USB3 bus
+    usb_sc              = kmem_alloc(sizeof(struct usb_softc),0);
+    device_t self       = kmem_alloc(sizeof(device_t), 0);
+    self->dv_unit       = 1;
+    self->dv_private    = usb_sc;
+    usb_sc->sc_bus      = &glob_xhci_sc->sc_bus;
     usb_attach(self_xhci, self, &glob_xhci_sc->sc_bus);
 
-    usb_sc2 = kmem_alloc(sizeof(struct usb_softc),0);
-    struct usbd_bus *sc_bus2 = kmem_alloc(sizeof(struct usbd_bus),0);
-    device_t self2 = kmem_alloc(sizeof(device_t), 0);
-    *sc_bus2 = glob_xhci_sc->sc_bus2;
-    sc_bus2->ub_methods = glob_xhci_sc->sc_bus2.ub_methods;
-    self2->dv_private = usb_sc2;
-    self2->dv_unit = 1;
-    usb_sc2->sc_bus = sc_bus2;
+    // attach USB2 bus
+    struct usbd_bus *sc_bus2;
+    usb_sc2               = kmem_alloc(sizeof(struct usb_softc),0);
+    sc_bus2               = kmem_alloc(sizeof(struct usbd_bus),0)
+    device_t self2        = kmem_alloc(sizeof(device_t), 0);
+    *sc_bus2              = glob_xhci_sc->sc_bus2;
+    sc_bus2->ub_methods   = glob_xhci_sc->sc_bus2.ub_methods;
+    self2->dv_private     = usb_sc2;
+    self2->dv_unit        = 1;
+    usb_sc2->sc_bus       = sc_bus2;
     usb_attach(self_xhci, self2, sc_bus2);
 
     // assert initial explore
-	usb_sc->sc_bus->ub_needsexplore = 1;
-	usb_sc2->sc_bus->ub_needsexplore = 1;
+	usb_sc->sc_bus->ub_needsexplore    = 1;
+	usb_sc2->sc_bus->ub_needsexplore   = 1;
 
+    // setup complete, busses will still need to be explored for devices to function
     printf("\nxHCI driver ready\n");
 }
 

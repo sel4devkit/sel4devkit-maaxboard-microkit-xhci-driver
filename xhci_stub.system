@@ -139,9 +139,12 @@
         <end pd="mem_handler" id="7"/>
         <end pd="kbd_logger" id="32"/>
     </channel>
+    <!--hand over fdt-->
+    <channel>
+        <end pd="mem_handler" id="4"/>
+        <end pd="xhci_stub" id="44"/>
+    </channel>
 
-
-    <!--bus method handlers-->
 
     <!--share xhci_sc with hardware interrupt-->
     <channel>
@@ -161,7 +164,7 @@
         <end pd="xhci_stub" id="8"/>
     </channel>
     
-    <!--share xhci_sc with software interrupt-->
+    <!--share data structures with software interrupt-->
     <channel>
         <end pd="software_interrupt" id="1"/>
         <end pd="xhci_stub" id="1"/>

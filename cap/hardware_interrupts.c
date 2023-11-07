@@ -157,9 +157,8 @@ void
 init(void) {
     device_ctrl_pointer = 0;
     device_ctrl_pointer_other = 0;
-    printf("root_intr_ptr = %p\n", xhci_root_intr_pointer);
     initialise_and_start_timer(timer_base);
-    printf("Hardware up and running\n");
+    printf("HARDWARE PD init ok\n");
 }
 
 void

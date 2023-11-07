@@ -73,17 +73,17 @@ ring_handle_t *kbd_buffer_ring;
 void
 init(void) {
     cold = 0;
-    xhci_bus_methods_ptr = get_bus_methods();
-    xhci_root_intr_pointer = get_root_intr_methods();
-    device_ctrl_pointer = get_device_methods();
-    device_intr_pointer = get_device_intr_methods();
     pipe_thread = false;
+    xhci_bus_methods_ptr    = get_bus_methods();
+    xhci_root_intr_pointer  = get_root_intr_methods();
+    device_ctrl_pointer     = get_device_methods();
+    device_intr_pointer     = get_device_intr_methods();
     sel4_dma_init(dma_cp_paddr, dma_cp_vaddr, dma_cp_vaddr + 0x200000);
     initialise_and_start_timer(timer_base);
-    printf("SOFTWARE_INTERRUPT PD init ok\n");
 
     kbd_buffer_ring = kmem_alloc(sizeof(*kbd_buffer_ring), 0);
     ring_init(kbd_buffer_ring, (ring_buffer_t *)rx_free, (ring_buffer_t *)rx_used, NULL, 0);
+    printf("SOFTWARE_INTERRUPT PD init ok\n");
 }
 
 void
