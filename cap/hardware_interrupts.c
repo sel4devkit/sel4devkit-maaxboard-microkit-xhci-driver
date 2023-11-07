@@ -1,6 +1,6 @@
 /* This work is Crown Copyright NCSC, 2023. */
 #include <microkit.h>
-#include <printf.h>
+#include <pdprint.h>
 
 #include <machine/bus_funcs.h>
 
@@ -32,6 +32,8 @@
 
 /* #define INTR_DEBUG */
 
+char *pd_name = "hardware_interrupts";
+
 uintptr_t xhci_base;
 uintptr_t dma_base;
 uintptr_t heap_base;
@@ -51,14 +53,14 @@ bool pipe_thread;
 uint32_t xhci_read_print_4(bus_space_tag_t tag, bus_space_handle_t bsh, bus_size_t size){
     uint32_t busval = bus_space_read_4(tag, bsh, size);
 #ifdef INTR_DEBUG
-    printf("xhci: Read4: Handle: %lx, Offset: %lx. Result: %08x\n", bsh, size, busval);
+    print_debug("xhci: Read4: Handle: %lx, Offset: %lx. Result: %08x\n", bsh, size, busval);
 #endif
     return busval;
 }
 
 void xhci_write_print_4(bus_space_tag_t tag, bus_space_handle_t bsh, bus_size_t size, uint32_t val){
 #ifdef INTR_DEBUG
-    printf("xhci: Wrte4: Handle: %lx, Offset: %lx.  Value: %08x\n", bsh, size, val);
+    print_debug("xhci: Wrte4: Handle: %lx, Offset: %lx.  Value: %08x\n", bsh, size, val);
 #endif
     bus_space_write_4(tag, bsh, size, val);
 }
@@ -99,12 +101,12 @@ xhci_intr1(struct xhci_softc * const sc)
 
 	usbsts = xhci_op_read_4(sc, XHCI_USBSTS);
 #ifdef INTR_DEBUG
-	printf("USBSTS 0x%08x\n", usbsts);
+	print_debug("USBSTS 0x%08x\n", usbsts);
 #endif
 
 	if ((usbsts & (XHCI_STS_HSE | XHCI_STS_EINT | XHCI_STS_PCD |
 	    XHCI_STS_HCE)) == 0) {
-		printf("ignored intr not for this device\n");
+		print_info("ignored intr not for this device\n");
 
 		return 0;
 	}
@@ -118,12 +120,12 @@ xhci_intr1(struct xhci_softc * const sc)
 
 #ifdef INTR_DEBUG
 	usbsts = xhci_op_read_4(sc, XHCI_USBSTS);
-	printf("USBSTS 0x%08x\n", usbsts);
+	print_debug("USBSTS 0x%08x\n", usbsts);
 #endif
 
 	iman = xhci_rt_read_4(sc, XHCI_IMAN(0));
 #ifdef INTR_DEBUG
-	printf("IMAN0 0x%08x\n", iman);
+	print_debug("IMAN0 0x%08x\n", iman);
 #endif
 	iman |= XHCI_IMAN_INTR_PEND;
 	xhci_rt_write_4(sc, XHCI_IMAN(0), iman);
@@ -157,8 +159,8 @@ void
 init(void) {
     device_ctrl_pointer = 0;
     device_ctrl_pointer_other = 0;
-    initialise_and_start_timer(timer_base);
-    printf("HARDWARE PD init ok\n");
+	initialise_and_start_timer(timer_base);
+    print_info("Initialised\n");
 }
 
 void
@@ -168,7 +170,7 @@ notified(microkit_channel ch) {
             if (glob_xhci_sc != NULL) {
                 xhci_intr(glob_xhci_sc);
             } else {
-                printf("FATAL: sc not defined");
+                print_fatal("sc not defined\n");
             }
             microkit_irq_ack(ch);
             break;
@@ -187,9 +189,9 @@ protected(microkit_channel ch, microkit_msginfo msginfo) {
             break;
         case 1:
             xhci_root_intr_pointer_other = microkit_msginfo_get_label(msginfo);
-            printf("sending xhci_root_intr_pointer: %p\n", xhci_root_intr_pointer);
+            print_debug("sending xhci_root_intr_pointer: %p\n", xhci_root_intr_pointer);
             return seL4_MessageInfo_new((uint64_t) xhci_root_intr_pointer, 1, 0, 0);
         default:
-            printf("Unexpected channel hardware int %d\n", ch);
+            print_debug("Unexpected channel hardware int %d\n", ch);
     }
 }

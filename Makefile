@@ -37,7 +37,7 @@ AS := $(TOOLCHAIN)-as
 MICROKIT_TOOL ?= $(MICROKIT_SDK)/bin/microkit
 
 # NETBSD_SRC:=  dev_verbose.o subr_device.o subr_autoconf.o usbdi_util.o usbdi.o usbroothub.o sel4_bus_funcs.o dma.o usb.o usb_quirks.o usb_subr.o xhci.o usb_mem.o uhub.o hid.o uhidev.o ukbd.o ums.o uts.o hidms.o hidkbdmap.o ioconf.o tpcalib.o uhid.o 
-NETBSD_SRC	:= dev_verbose.o subr_device.o subr_autoconf.o usbdi_util.o usbdi.o usbroothub.o sel4_bus_funcs.o dma.o usb.o usb_quirks.o usb_subr.o xhci.o usb_mem.o uhub.o hid.o uhidev.o ukbd.o ums.o uts.o hidms.o hidkbdmap.o ioconf.o tpcalib.o uhid.o umass.o umass_quirks.o  fdt_openfirm.o fdt_phy.o fdt_subr.o strlist.o ofw_subr.o pmatch.o # umass_scsipi.o scsipi_base.o scsipiconf.o scsiconf.o scsi_subr.o # scsipi_ioctl.o # ugen.o tty_subr.o kern_event.o sys_select.o //not implemented yet
+NETBSD_SRC	:= dev_verbose.o subr_device.o subr_autoconf.o usbdi_util.o usbdi.o usbroothub.o sel4_bus_funcs.o dma.o usb.o usb_quirks.o usb_subr.o xhci.o usb_mem.o uhub.o hid.o uhidev.o ukbd.o ums.o uts.o hidms.o hidkbdmap.o ioconf.o tpcalib.o uhid.o umass.o umass_quirks.o  fdt_openfirm.o fdt_phy.o fdt_subr.o strlist.o ofw_subr.o pmatch.o fdt_reset.o # umass_scsipi.o scsipi_base.o scsipiconf.o scsiconf.o scsi_subr.o # scsipi_ioctl.o # ugen.o tty_subr.o kern_event.o sys_select.o //not implemented yet
 
 FDT_SRC		:= fdt.o fdt_addresses.o fdt_empty_tree.o fdt_ro.o fdt_rw.o fdt_strerror.o fdt_sw.o fdt_wip.o
 UTILS		:= tinyalloc.o printf.o util.o timer.o
@@ -138,8 +138,14 @@ $(BUILD_DIR)/fdt_subr.o: $(NETBSD_DIR)/sys/dev/fdt/fdt_subr.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 $(BUILD_DIR)/fdt_phy.o: $(NETBSD_DIR)/sys/dev/fdt/fdt_phy.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
+# $(BUILD_DIR)/fdt_clock.o: $(NETBSD_DIR)/sys/dev/fdt/fdt_clock.c Makefile
+# 	$(CC) -c $(CFLAGS) $< -o $@
+$(BUILD_DIR)/fdt_reset.o: $(NETBSD_DIR)/sys/dev/fdt/fdt_reset.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
 $(BUILD_DIR)/fdt_openfirm.o: $(NETBSD_DIR)/sys/dev/fdt/fdt_openfirm.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
+# $(BUILD_DIR)/clk.o: $(NETBSD_DIR)/sys/dev/clk/clk.c Makefile
+# 	$(CC) -c $(CFLAGS) $< -o $@
 # open firmware
 $(BUILD_DIR)/openfirmio.o: $(NETBSD_DIR)/sys/dev/ofw/openfirmio.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@

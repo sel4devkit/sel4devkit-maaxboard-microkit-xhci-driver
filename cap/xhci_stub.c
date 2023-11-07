@@ -1,6 +1,6 @@
 /* This work is Crown Copyright NCSC, 2023. */
 #include <microkit.h>
-#include <printf.h>
+#include <pdprint.h>
 
 #include <machine/bus_funcs.h>
 
@@ -62,6 +62,8 @@ struct imx8mq_usbphy_softc {
 	int			sc_phandle;
 };
 
+char *pd_name = "xhci_stub";
+
 // definitions from .system file
 uintptr_t xhci_base;
 uintptr_t xhci_phy_base;
@@ -85,8 +87,18 @@ ring_handle_t *kbd_buffer_ring;
 
 void
 init(void) {
+    uintptr_t fdt = microkit_msginfo_get_label(microkit_ppcall(44, seL4_MessageInfo_new(0,0,0,0)));
+    if (fdt_magic(fdt) != 0xd00dfeed){
+        print_fatal("fdt magic failed\n");
+        return;
+    }
+
+    fdtbus_init(fdt);
+
     //initialise autoconf data structures
     config_init(); 
+    initialise_and_start_timer(timer_base);
+    sel4_dma_init(dma_cp_paddr, dma_cp_vaddr, dma_cp_vaddr + 0x200000);
 
     pipe_thread = false;
     cold = 0;
@@ -100,35 +112,34 @@ init(void) {
     xhci_root_intr_pointer_other    = (uintptr_t) microkit_msginfo_get_label(microkit_ppcall(1, seL4_MessageInfo_new((uint64_t) xhci_root_intr_pointer,1,0,0)));
     device_ctrl_pointer_other       = (uintptr_t) microkit_msginfo_get_label(microkit_ppcall(3, seL4_MessageInfo_new((uint64_t) device_ctrl_pointer,1,0,0)));
     device_intr_pointer_other       = (uintptr_t) microkit_msginfo_get_label(microkit_ppcall(4, seL4_MessageInfo_new((uint64_t) device_intr_pointer,1,0,0)));
-    uintptr_t fdt = microkit_msginfo_get_label(microkit_ppcall(44, seL4_MessageInfo_new(0,0,0,0)));
-    printf("fdt magic = 0x%x\n", fdt_magic(fdt));
 
-    fdtbus_init(fdt);
-
-	int offset = -1;
-
-    offset = fdt_next_node(fdt, offset, NULL);
-    int dwc3_phandle = fdtbus_offset2phandle(offset);
+	int offset = 0x6378; // DEBUG: set to -1 to actually traverse tree
+    int startoffset = 0;
+    int dwc3_phandle;
     bus_size_t addr, size;
-    printf("Traversing FDT to find dwc3 node at 0x%x...\n", xhci_base);
-    while (addr != xhci_base) {
-        offset = fdt_next_node(fdt, offset, NULL);
-        if (offset < 0) {
-            if (offset == -FDT_ERR_NOTFOUND) {
-                printf("FATAL ERROR: no dwc3 node at 0x%x. Exiting.\n", xhci_base);
-                return;
+
+    if (offset < 0) {
+        print_debug("Traversing FDT to find dwc3 node at 0x%x...\n", xhci_base);
+        for (offset = fdt_next_node(fdt, startoffset, NULL);
+            offset >= 0;
+            offset = fdt_next_node(fdt, offset, NULL)) {
+            fdtbus_get_reg(fdtbus_offset2phandle(offset), 0, &addr, &size);
+            if (addr == xhci_base) {
+                dwc3_phandle = fdtbus_offset2phandle(offset);
+                print_debug("offset: %d\n", offset); // DEBUG: plug this into the offset value to speed up initialisation
+                break;
+            } else if (offset < 0) {
+                if (offset == -FDT_ERR_NOTFOUND) {
+                    print_fatal("no dwc3 node at 0x%x. Exiting.\n", xhci_base);
+                    return;
+                }
             }
         }
+    } else {
+        print_warn("using hardcoded dwc3 node\n");
         dwc3_phandle = fdtbus_offset2phandle(offset);
         fdtbus_get_reg(dwc3_phandle, 0, &addr, &size);
     }
-    printf("XHCI_STUB: dwc3_phandle = %x\n", dwc3_phandle);
-    printf("addr = 0x%x, size = 0x%x\n", addr, size);
-
-    // offset = -1;
-    initialise_and_start_timer(timer_base);
-
-    sel4_dma_init(dma_cp_paddr, dma_cp_vaddr, dma_cp_vaddr + 0x200000);
 
     // setup xhci devices + tell software PD memory locations
     device_t parent_xhci = NULL;
@@ -175,7 +186,12 @@ init(void) {
 	usb_sc2->sc_bus->ub_needsexplore   = 1;
 
     // setup complete, busses will still need to be explored for devices to function
-    printf("\nxHCI driver ready\n");
+    print_info("Initialised\n");
+    usb_discover(usb_sc);
+    usb_discover(usb_sc2);
+    printf("===================\n");
+    printf(" xHCI driver ready \n");
+    printf("===================\n");
 }
 
 
@@ -187,18 +203,18 @@ notified(microkit_channel ch)
         case 17: // hotplug
             // do a discover
             if (usb_sc->sc_bus->ub_needsexplore) {
-                printf("Discover on USB3...\n");
+                print_info("Discover on USB3...\n");
                 usb_discover(usb_sc);
-                printf("USB3 discover finished\n");
+                print_info("USB3 discover finished\n");
             }
             if (usb_sc2->sc_bus->ub_needsexplore) {
-                printf("Discover on USB2...\n");
+                print_info("Discover on USB2...\n");
                 usb_discover(usb_sc2);
-                printf("USB2 discover finished\n");
+                print_info("USB2 discover finished\n");
             }
             break;
         default:
-            printf("xhci_stub received notification unexpected channel\n");
+            print_warn("xhci_stub received notification unexpected channel\n");
     }
 }
 
@@ -210,7 +226,7 @@ protected(microkit_channel ch, microkit_msginfo msginfo) {
             xhci_root_intr_pointer = (uintptr_t) microkit_msginfo_get_label(msginfo);
             break;
         default:
-            printf("xhci_stub received protected unexpected channel\n");
+            print_warn("xhci_stub received protected unexpected channel\n");
     }
     return seL4_MessageInfo_new(0,0,0,0);
 }

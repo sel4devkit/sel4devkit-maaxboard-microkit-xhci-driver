@@ -1,6 +1,6 @@
 /* This work is Crown Copyright NCSC, 2023. */
 #include <microkit.h>
-#include <printf.h>
+#include <pdprint.h>
 #include <tinyalloc.h>
 #include <lib/libkern/libkern.h>
 
@@ -15,6 +15,7 @@ uintptr_t ta_limit;
 #define STR(x) STR2(x)
  
 #define INCBIN_SECTION ".rodata"
+char *pd_name = "mem_handler";
  
 // this aligns start address to 16 and terminates byte array with explict 0
 // which is not really needed, feel free to change it to whatever you want/need
@@ -40,11 +41,11 @@ int test2 = 12;
 void
 init(void) {
     ta_limit = heap_base + heap_size;
-    printf("INFO: heap from %p to %p\n", heap_base, ta_limit);
+    print_debug("Heap from %p to %p\n", heap_base, ta_limit);
     bool error = ta_init((void*)heap_base, (void*)ta_limit, ta_blocks, ta_thresh, ta_align);
     fdt = ta_alloc(incbin_device_tree_end - incbin_device_tree_start);
     memcpy(fdt, incbin_device_tree_start, incbin_device_tree_end - incbin_device_tree_start);
-    printf("PD Mem_handler init OK\n");
+    print_info("Initialised\n");
 }
 
 
@@ -77,6 +78,6 @@ protected(microkit_channel ch, microkit_msginfo msginfo) {
             return seL4_MessageInfo_new(fdt, 1, 0, 0);
             break;
         default:
-            printf("Unexpected channel mem_handler %d\n", ch);
+            print_warn("Unexpected channel mem_handler %d\n", ch);
     }
 }

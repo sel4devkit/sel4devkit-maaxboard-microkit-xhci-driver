@@ -79,7 +79,7 @@ void initialise_and_start_timer(uintptr_t timer_base)
     tmr_base = timer_base;
     tick_frequency = readl(tmr_base, 0x020);
 
-    printf("Tick freq = %x\n", tick_frequency);
+    timer_print("Tick freq = %x\n", tick_frequency);
     if (tick_frequency < 1000000) {
         printf("Fatal: System counter tick frequency is too low for accurate timing\n");
         hang();
