@@ -57,7 +57,7 @@
         <setvar symbol="dma_cp_paddr" region_paddr="dma_pool" />
     </protection_domain>
 
-    <protection_domain name="software_interrupt" pp="true" priority="230">
+    <protection_domain name="software_interrupt" pp="true" priority="230"> 
         <map mr="heap_mem" vaddr="0x50000000" perms="rw" cached="false" setvar_vaddr="heap_base"/>
         <map mr="dma_pool" vaddr="0x54000000" perms="rw" cached="true" setvar_vaddr="dma_base"/>
         <map mr="xhci_mem" vaddr="0x38200000" perms="rw" cached="false" setvar_vaddr="xhci_base"/>
@@ -139,14 +139,23 @@
         <end pd="mem_handler" id="7"/>
         <end pd="kbd_logger" id="32"/>
     </channel>
+    <!--hand over fdt-->
+    <channel>
+        <end pd="mem_handler" id="4"/>
+        <end pd="xhci_stub" id="44"/>
+    </channel>
 
-
-    <!--bus method handlers-->
 
     <!--share xhci_sc with hardware interrupt-->
     <channel>
         <end pd="hardware_interrupt" id="0"/>
         <end pd="xhci_stub" id="0"/>
+    </channel>
+
+    <!-- usb discover call (hotplugging) -->
+    <channel>
+        <end pd="software_interrupt" id="17"/>
+        <end pd="xhci_stub" id="17"/>
     </channel>
 
     <!--share interrupt functions with xhci_stub-->
@@ -155,7 +164,7 @@
         <end pd="xhci_stub" id="8"/>
     </channel>
     
-    <!--share xhci_sc with software interrupt-->
+    <!--share data structures with software interrupt-->
     <channel>
         <end pd="software_interrupt" id="1"/>
         <end pd="xhci_stub" id="1"/>

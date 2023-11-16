@@ -1,6 +1,6 @@
 /* This work is Crown Copyright NCSC, 2023. */
 #include <microkit.h>
-#include <printf.h>
+#include <pdprint.h>
 
 #include <machine/bus_funcs.h>
 
@@ -34,6 +34,8 @@
 
 #include <dev/fdt/fdtvar.h>
 #include <config_methods.h>
+
+char* pd_name = "software_interrupts";
 
 uintptr_t xhci_base;
 uintptr_t dma_base;
@@ -89,10 +91,10 @@ init(void) {
     pipe_thread = false;
     sel4_dma_init(dma_cp_paddr, dma_cp_vaddr, dma_cp_vaddr + 0x200000);
     initialise_and_start_timer(timer_base);
-    printf("SOFTWARE_INTERRUPT PD init ok\n");
 
     kbd_buffer_ring = kmem_alloc(sizeof(*kbd_buffer_ring), 0);
     ring_init(kbd_buffer_ring, (ring_buffer_t *)rx_free, (ring_buffer_t *)rx_used, NULL, 0);
+    print_info("Initialised\n");
 }
 
 void
@@ -101,8 +103,9 @@ notified(microkit_channel ch) {
         case 7:
             if (glob_xhci_sc != NULL) {
                 xhci_softintr(&glob_xhci_sc->sc_bus);
+                microkit_notify(17); //discover call
             } else {
-                printf("FATAL: softintr sc not defined");
+                print_fatal("sc not defined");
             }
             break;
     }
@@ -114,7 +117,7 @@ protected(microkit_channel ch, microkit_msginfo msginfo) {
     switch (ch) {
         case 1:
             xhci_root_intr_pointer_other = (struct usbd_pipe_methods *) microkit_msginfo_get_label(msginfo);
-            printf("sending xhci_root_intr_pointer: %p\n", xhci_root_intr_pointer);
+            print_debug("sending xhci_root_intr_pointer: %p\n", xhci_root_intr_pointer);
             return seL4_MessageInfo_new((uint64_t) xhci_root_intr_pointer, 1, 0, 0);
             break;
         case 2:
@@ -122,20 +125,20 @@ protected(microkit_channel ch, microkit_msginfo msginfo) {
             break;
         case 3:
             device_ctrl_pointer_other = (struct usbd_pipe_methods *) microkit_msginfo_get_label(msginfo);
-            printf("sending device_ctrl_pointer: %p\n", device_ctrl_pointer);
+            print_debug("sending device_ctrl_pointer: %p\n", device_ctrl_pointer);
             return seL4_MessageInfo_new((uint64_t) device_ctrl_pointer, 1, 0, 0);
         case 4:
             device_intr_pointer_other = (struct usbd_pipe_methods *) microkit_msginfo_get_label(msginfo);
-            printf("sending device_intr_pointer: %p\n", device_intr_pointer);
+            print_debug("sending device_intr_pointer: %p\n", device_intr_pointer);
             return seL4_MessageInfo_new((uint64_t) device_intr_pointer, 1, 0, 0);
         case 5:
             usbd_delay_ms(0, 100);
-            printf("doing set_config_index in softintr\n");
+            print_debug("doing set_config_index in softintr\n");
             cfg = (struct set_cfg*) microkit_msginfo_get_label(msginfo);
             cfg->dev->ud_quirks = get_quirks(); //assume no quirks
-            printf("config dev = %p\n", cfg->dev);
+            print_debug("config dev = %p\n", cfg->dev);
             usbd_status err = usbd_set_config_index(cfg->dev, cfg->confi, cfg->msg);
-            printf("reached end of set_conf_index\n");
+            print_debug("reached end of set_conf_index\n");
             return seL4_MessageInfo_new(err,1,0,0);
         case 6:
             umass_bbb_methods_pointer_other = (struct umass_wire_methods *) microkit_msginfo_get_label(msginfo);
@@ -159,7 +162,7 @@ protected(microkit_channel ch, microkit_msginfo msginfo) {
             printf("sending device_bulk_pointer: %p\n", device_bulk_pointer);
             return seL4_MessageInfo_new((uint64_t) device_bulk_pointer, 1, 0, 0);
         default:
-            printf("softintr unexpected channel %d\n", ch);
+            print_warn("softintr unexpected channel %d\n", ch);
     }
     return seL4_MessageInfo_new(0,0,0,0);
 }

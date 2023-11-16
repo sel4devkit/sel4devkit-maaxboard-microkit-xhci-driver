@@ -2527,6 +2527,8 @@ struct cfdata cfdata[] = {
     { "scsibus",	"scsibus",	 0, STAR, loc+651,      0, &pspec94 },
 /*215: sd* at scsibus? target -1 lun -1 */
     { "sd",		"sd",		 0, STAR, loc+518,      0, &pspec61 },
+/*125: xhci* at fdt? pass 10 */
+    { "xhci",		"dwc3_fdt",	 0, STAR, loc+601,      0, &pspec0 },
 /*222: usb* at usbus? */
     { "usb",		"usb",		 0, STAR,    NULL,      0, &pspec49 },
 /*223: uhub* at usb? */
@@ -2553,6 +2555,9 @@ static struct cfattach * const scsibus_cfattachinit[] = {
 };
 static struct cfattach * const sd_cfattachinit[] = {
 	&sd_ca, NULL
+};
+static struct cfattach * const xhci_cfattachinit[] = {
+	&dwc3_fdt_ca, NULL
 };
 static struct cfattach * const usb_cfattachinit[] = {
 	&usb_ca, NULL
@@ -2584,6 +2589,7 @@ const struct cfattachinit cfattachinit[] = {
 	// { "simplebus", simplebus_cfattachinit },
 	{ "scsibus", scsibus_cfattachinit },
 	{ "sd", sd_cfattachinit },
+	{ "xhci", xhci_cfattachinit },
 	{ "usb", usb_cfattachinit },
 	{ "uhub", uhub_cfattachinit },
 	{ "uhidev", uhidev_cfattachinit },
@@ -2600,7 +2606,7 @@ const short cfroots[] = {
 	-1
 };
 
-/* pseudo-devices */
+// /* pseudo-devices */
 
 // const struct pdevinit pdevinit[] = {
 // 	{ cpuctlattach, 1 },

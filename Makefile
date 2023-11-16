@@ -36,23 +36,24 @@ LD := $(TOOLCHAIN)-ld
 AS := $(TOOLCHAIN)-as
 MICROKIT_TOOL ?= $(MICROKIT_SDK)/bin/microkit
 
-NETBSD_SRC			:=  dev_verbose.o subr_device.o subr_autoconf.o usbdi_util.o usbdi.o usbroothub.o sel4_bus_funcs.o dma.o usb.o usb_quirks.o usb_subr.o xhci.o usb_mem.o uhub.o hid.o uhidev.o ukbd.o ums.o uts.o hidms.o hidkbdmap.o ioconf.o tpcalib.o uhid.o umass.o umass_quirks.o umass_scsipi.o scsipi_base.o scsipiconf.o scsiconf.o scsi_base.o scsi_subr.o scsipi_ioctl.o heapsort.o strnvisx.o sd.o dksubr.o subr_disk.o subr_humanize.o hexdump.o
-UTILS				:= 	tinyalloc.o printf.o util.o timer.o
+NETBSD_SRC			:=  dev_verbose.o subr_device.o subr_autoconf.o usbdi_util.o usbdi.o usbroothub.o sel4_bus_funcs.o dma.o usb.o usb_quirks.o usb_subr.o xhci.o usb_mem.o uhub.o hid.o uhidev.o ukbd.o ums.o uts.o hidms.o hidkbdmap.o ioconf.o tpcalib.o uhid.o umass.o umass_quirks.o umass_scsipi.o scsipi_base.o scsipiconf.o scsiconf.o scsi_base.o scsi_subr.o scsipi_ioctl.o heapsort.o strnvisx.o sd.o dksubr.o subr_disk.o subr_humanize.o hexdump.o fdt_openfirm.o fdt_phy.o fdt_subr.o strlist.o ofw_subr.o pmatch.o fdt_reset.o
+FDT_SRC		:= fdt.o fdt_addresses.o fdt_empty_tree.o fdt_ro.o fdt_rw.o fdt_strerror.o fdt_sw.o fdt_wip.o
+UTILS		:= tinyalloc.o printf.o util.o timer.o
 
-XHCI_STUB_OBJS 		:=  xhci_stub.o $(NETBSD_SRC) imx8mq_usbphy.o dwc3_fdt.o shared_ringbuffer.o $(UTILS)
-SOFTWARE_OBJS 		:=  software_interrupts.o $(NETBSD_SRC) $(UTILS) shared_ringbuffer.o
+XHCI_STUB_OBJS 		:=  xhci_stub.o $(NETBSD_SRC) $(FDT_SRC) imx8mq_usbphy.o dwc3_fdt.o shared_ringbuffer.o $(UTILS)
+SOFTWARE_OBJS 		:=  software_interrupts.o $(NETBSD_SRC) $(FDT_SRC) imx8mq_usbphy.o dwc3_fdt.o $(UTILS) shared_ringbuffer.o
 HARDWARE_OBJS 		:=  hardware_interrupts.o sel4_bus_funcs.o $(UTILS)
-MEM_OBJS			:=  mem_handler.o tinyalloc.o printf.o
+MEM_OBJS			:=  mem_handler.o tinyalloc.o printf.o util.o
 KBD_LOGGER_OBJS 	:=  kbd_logger.o hidkbdmap.o shared_ringbuffer.o printf.o tinyalloc.o
 SIMULATED_KBD_OBJS	:=  simulated_kbd.o printf.o tinyalloc.o
 
 BOARD_DIR := $(MICROKIT_SDK)/board/$(MICROKIT_BOARD)/$(MICROKIT_CONFIG)
 
 IMAGES := xhci_stub.elf hardware.elf software.elf mem_handler.elf kbd_logger.elf simulated_kbd.elf
-INC := $(BOARD_DIR)/include include/tinyalloc include/wrapper $(NETBSD_DIR)/sys $(NETBSD_DIR)/mach_include include/bus include/dma include/printf include/timer src/
+INC := $(BOARD_DIR)/include include/tinyalloc include/wrapper $(NETBSD_DIR)/sys $(NETBSD_DIR)/sys/external/bsd/libfdt/dist $(NETBSD_DIR)/mach_include include/bus include/dma include/printf include/timer src/
 INC_PARAMS=$(foreach d, $(INC), -I$d)
 WARNINGS := -Wall -Wno-comment -Wno-return-type -Wno-unused-function -Wno-unused-value -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-pointer-sign
-CFLAGS := -mcpu=$(CPU) -mstrict-align -ffreestanding -g3 -O3 $(WARNINGS) $(INC_PARAMS) -I$(BOARD_DIR)/include -DSEL4  -DSEL4_USB_DEBUG
+CFLAGS := -mcpu=$(CPU) -mstrict-align -ffreestanding -g3 -O3 $(WARNINGS) $(INC_PARAMS) -I$(BOARD_DIR)/include -DSEL4 # -DSEL4_USB_DEBUG
 LDFLAGS := -L$(BOARD_DIR)/lib
 LIBS := -lmicrokit -Tmicrokit.ld
 
@@ -63,6 +64,7 @@ all: includes
 
 all: $(IMAGE_FILE)
 
+# create machine directory
 includes:
 	@mkdir -p ${NETBSD_DIR}/mach_include/machine
 	@ln -fs ${NETBSD_DIR}/sys/arch/evbarm/include/* $(NETBSD_DIR)/mach_include/machine/
@@ -70,6 +72,10 @@ includes:
 	@ln -fs ${NETBSD_DIR}/sys/arch/arm/include/* $(NETBSD_DIR)/mach_include/arm/
 	@mkdir -p ${NETBSD_DIR}/mach_include/aarch64
 	@ln -fs ${NETBSD_DIR}/sys/arch/arm/include/* $(NETBSD_DIR)/mach_include/aarch64/
+
+
+$(BUILD_DIR)/%.o: $(NETBSD_DIR)/sys/external/bsd/libfdt/dist/%.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/%.o: src/%.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
@@ -96,6 +102,58 @@ $(BUILD_DIR)/usb_subr.o: $(NETBSD_DIR)/sys/dev/usb/usb_subr.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/usbroothub.o: $(NETBSD_DIR)/sys/dev/usb/usbroothub.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/umass.o: $(NETBSD_DIR)/sys/dev/usb/umass.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/umass_scsipi.o: $(NETBSD_DIR)/sys/dev/usb/umass_scsipi.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/umass_quirks.o: $(NETBSD_DIR)/sys/dev/usb/umass_quirks.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/scsiconf.o: $(NETBSD_DIR)/sys/dev/scsipi/scsiconf.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/scsi_subr.o: $(NETBSD_DIR)/sys/dev/scsipi/scsi_subr.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+	
+$(BUILD_DIR)/scsipi_base.o: $(NETBSD_DIR)/sys/dev/scsipi/scsipi_base.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/scsipiconf.o: $(NETBSD_DIR)/sys/dev/scsipi/scsipiconf.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+# $(BUILD_DIR)/scsipi_ioctl.o: $(NETBSD_DIR)/sys/dev/scsipi/scsipi_ioctl.c Makefile
+# 	$(CC) -c $(CFLAGS) $< -o $@
+$(BUILD_DIR)/pmatch.o: $(NETBSD_DIR)/sys/lib/libkern/pmatch.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/strlist.o: $(NETBSD_DIR)/sys/lib/libkern/strlist.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+$(BUILD_DIR)/fdt_subr.o: $(NETBSD_DIR)/sys/dev/fdt/fdt_subr.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+$(BUILD_DIR)/fdt_phy.o: $(NETBSD_DIR)/sys/dev/fdt/fdt_phy.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+# $(BUILD_DIR)/fdt_clock.o: $(NETBSD_DIR)/sys/dev/fdt/fdt_clock.c Makefile
+# 	$(CC) -c $(CFLAGS) $< -o $@
+$(BUILD_DIR)/fdt_reset.o: $(NETBSD_DIR)/sys/dev/fdt/fdt_reset.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+$(BUILD_DIR)/fdt_openfirm.o: $(NETBSD_DIR)/sys/dev/fdt/fdt_openfirm.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+# $(BUILD_DIR)/clk.o: $(NETBSD_DIR)/sys/dev/clk/clk.c Makefile
+# 	$(CC) -c $(CFLAGS) $< -o $@
+# open firmware
+$(BUILD_DIR)/openfirmio.o: $(NETBSD_DIR)/sys/dev/ofw/openfirmio.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+$(BUILD_DIR)/ofw_sysctl.o: $(NETBSD_DIR)/sys/dev/ofw/ofw_sysctl.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+$(BUILD_DIR)/ofw_network_subr.o: $(NETBSD_DIR)/sys/dev/ofw/ofw_network_subr.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+$(BUILD_DIR)/ofw_spi_subr.o: $(NETBSD_DIR)/sys/dev/ofw/ofw_spi_subr Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+$(BUILD_DIR)/ofw_subr.o: $(NETBSD_DIR)/sys/dev/ofw/ofw_subr.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/uts.o: $(NETBSD_DIR)/sys/dev/usb/uts.c Makefile
