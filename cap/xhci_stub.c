@@ -98,10 +98,6 @@ init(void) {
         return;
     }
 
-    config_init();
-    pipe_thread = false;
-    cold = 0;
-
     // init
     printf("XHCI_STUB: dmapaddr = %p\n", dma_cp_paddr);
     xhci_bus_methods_ptr = (struct usbd_bus_methods *) get_bus_methods();

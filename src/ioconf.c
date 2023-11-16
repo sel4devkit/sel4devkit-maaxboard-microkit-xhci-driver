@@ -8,7 +8,9 @@
 #include <sys/param.h>
 #include <sys/conf.h>
 #include <sys/device.h>
+#ifndef SEL4
 #include <sys/mount.h>
+#endif
 
 static const struct cfiattrdata wskbddevcf_iattrdata = {
 	"wskbddev", 2, {
@@ -2519,7 +2521,9 @@ static const struct cfparent pspec94 = {
 
 struct cfdata cfdata[] = {
     /* driver           attachment    unit state      loc   flags  pspec */
-/*208: scsibus* at umass? channel -1 */
+/*125: xhci* at fdt? pass 10 */
+    { "xhci",		"dwc3_fdt",	 0, STAR, loc+601,      0, &pspec0 },
+// /*208: scsibus* at umass? channel -1 */
     { "scsibus",	"scsibus",	 0, STAR, loc+649,      0, &pspec60 },
 /*209: scsibus* at usscanner? channel -1 */
     { "scsibus",	"scsibus",	 0, STAR, loc+650,      0, &pspec83 },
@@ -2527,8 +2531,6 @@ struct cfdata cfdata[] = {
     { "scsibus",	"scsibus",	 0, STAR, loc+651,      0, &pspec94 },
 /*215: sd* at scsibus? target -1 lun -1 */
     { "sd",		"sd",		 0, STAR, loc+518,      0, &pspec61 },
-/*125: xhci* at fdt? pass 10 */
-    { "xhci",		"dwc3_fdt",	 0, STAR, loc+601,      0, &pspec0 },
 /*222: usb* at usbus? */
     { "usb",		"usb",		 0, STAR,    NULL,      0, &pspec49 },
 /*223: uhub* at usb? */
@@ -2550,14 +2552,14 @@ struct cfdata cfdata[] = {
     { NULL,		NULL,		 0,    0,    NULL,      0, NULL }
 };
 
+static struct cfattach * const xhci_cfattachinit[] = {
+	&dwc3_fdt_ca, NULL
+};
 static struct cfattach * const scsibus_cfattachinit[] = {
 	&scsibus_ca, NULL
 };
 static struct cfattach * const sd_cfattachinit[] = {
 	&sd_ca, NULL
-};
-static struct cfattach * const xhci_cfattachinit[] = {
-	&dwc3_fdt_ca, NULL
 };
 static struct cfattach * const usb_cfattachinit[] = {
 	&usb_ca, NULL
@@ -2586,10 +2588,10 @@ static struct cfattach * const umass_cfattachinit[] = {
 
 
 const struct cfattachinit cfattachinit[] = {
-	// { "simplebus", simplebus_cfattachinit },
+	{ "xhci", xhci_cfattachinit },
+//	{ "simplebus", simplebus_cfattachinit },
 	{ "scsibus", scsibus_cfattachinit },
 	{ "sd", sd_cfattachinit },
-	{ "xhci", xhci_cfattachinit },
 	{ "usb", usb_cfattachinit },
 	{ "uhub", uhub_cfattachinit },
 	{ "uhidev", uhidev_cfattachinit },

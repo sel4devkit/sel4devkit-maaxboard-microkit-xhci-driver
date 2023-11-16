@@ -118,6 +118,9 @@ $(BUILD_DIR)/scsiconf.o: $(NETBSD_DIR)/sys/dev/scsipi/scsiconf.c Makefile
 
 $(BUILD_DIR)/scsi_subr.o: $(NETBSD_DIR)/sys/dev/scsipi/scsi_subr.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/scsi_base.o: $(NETBSD_DIR)/sys/dev/scsipi/scsi_base.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
 	
 $(BUILD_DIR)/scsipi_base.o: $(NETBSD_DIR)/sys/dev/scsipi/scsipi_base.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
@@ -125,8 +128,8 @@ $(BUILD_DIR)/scsipi_base.o: $(NETBSD_DIR)/sys/dev/scsipi/scsipi_base.c Makefile
 $(BUILD_DIR)/scsipiconf.o: $(NETBSD_DIR)/sys/dev/scsipi/scsipiconf.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-# $(BUILD_DIR)/scsipi_ioctl.o: $(NETBSD_DIR)/sys/dev/scsipi/scsipi_ioctl.c Makefile
-# 	$(CC) -c $(CFLAGS) $< -o $@
+$(BUILD_DIR)/scsipi_ioctl.o: $(NETBSD_DIR)/sys/dev/scsipi/scsipi_ioctl.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
 $(BUILD_DIR)/pmatch.o: $(NETBSD_DIR)/sys/lib/libkern/pmatch.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
@@ -180,32 +183,6 @@ $(BUILD_DIR)/xhci.o: $(NETBSD_DIR)/sys/dev/usb/xhci.c Makefile
 $(BUILD_DIR)/strnvisx.o: $(NETBSD_DIR)/sys/lib/libkern/strnvisx.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/umass.o: $(NETBSD_DIR)/sys/dev/usb/umass.c Makefile
-	$(CC) -c $(CFLAGS) $< -o $@
-
-$(BUILD_DIR)/umass_scsipi.o: $(NETBSD_DIR)/sys/dev/usb/umass_scsipi.c Makefile
-	$(CC) -c $(CFLAGS) $< -o $@
-
-$(BUILD_DIR)/umass_quirks.o: $(NETBSD_DIR)/sys/dev/usb/umass_quirks.c Makefile
-	$(CC) -c $(CFLAGS) $< -o $@
-
-$(BUILD_DIR)/scsiconf.o: $(NETBSD_DIR)/sys/dev/scsipi/scsiconf.c Makefile
-	$(CC) -c $(CFLAGS) $< -o $@
-
-$(BUILD_DIR)/scsipi_base.o: $(NETBSD_DIR)/sys/dev/scsipi/scsipi_base.c Makefile
-	$(CC) -c $(CFLAGS) $< -o $@
-
-$(BUILD_DIR)/scsipiconf.o: $(NETBSD_DIR)/sys/dev/scsipi/scsipiconf.c Makefile
-	$(CC) -c $(CFLAGS) $< -o $@
-
-$(BUILD_DIR)/scsi_base.o: $(NETBSD_DIR)/sys/dev/scsipi/scsi_base.c Makefile
-	$(CC) -c $(CFLAGS) $< -o $@
-
-$(BUILD_DIR)/scsi_subr.o: $(NETBSD_DIR)/sys/dev/scsipi/scsi_subr.c Makefile
-	$(CC) -c $(CFLAGS) $< -o $@
-
-$(BUILD_DIR)/scsipi_ioctl.o: $(NETBSD_DIR)/sys/dev/scsipi/scsipi_ioctl.c Makefile
-	$(CC) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/sd.o: $(NETBSD_DIR)/sys/dev/scsipi/sd.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
