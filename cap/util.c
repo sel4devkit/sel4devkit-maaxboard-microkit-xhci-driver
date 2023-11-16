@@ -218,3 +218,25 @@ strcmp(const char *s1, const char *s2)
 			return (0);
 	return (*(unsigned char *)s1 - *(unsigned char *)--s2);
 }
+
+/*
+ * Find the first occurrence of find in s.
+ */
+char *
+strstr(const char *s, const char *find)
+{
+	char c, sc;
+	size_t len;
+
+	if ((c = *find++) != 0) {
+		len = strlen(find);
+		do {
+			do {
+				if ((sc = *s++) == 0)
+					return (NULL);
+			} while (sc != c);
+		} while (strncmp(s, find, len) != 0);
+		s--;
+	}
+	return __UNCONST(s);
+}

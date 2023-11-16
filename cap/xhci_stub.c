@@ -5,6 +5,7 @@
 #include <machine/bus_funcs.h>
 
 #include <dev/usb/xhcivar.h>
+#include <dev/usb/umassvar.h>
 
 #include <wrapper.h>
 #include <tinyalloc.h>
@@ -45,6 +46,10 @@ uintptr_t device_ctrl_pointer;
 uintptr_t device_ctrl_pointer_other;
 uintptr_t device_intr_pointer;
 uintptr_t device_intr_pointer_other;
+uintptr_t device_bulk_pointer;
+uintptr_t device_bulk_pointer_other;
+uintptr_t umass_bbb_methods_pointer;
+uintptr_t umass_bbb_methods_pointer_other;
 uintptr_t rx_free;
 uintptr_t rx_used;
 uintptr_t tx_free;
@@ -110,12 +115,21 @@ init(void) {
     device_ctrl_pointer = (uintptr_t) get_device_methods();
     microkit_msginfo addr = microkit_ppcall(1, seL4_MessageInfo_new((uint64_t) xhci_root_intr_pointer,1,0,0));
     xhci_root_intr_pointer_other = microkit_msginfo_get_label(addr);
-    device_ctrl_pointer = (uintptr_t) get_device_methods();
     addr = microkit_ppcall(3, seL4_MessageInfo_new((uint64_t) device_ctrl_pointer,1,0,0));
     device_ctrl_pointer_other = (uintptr_t) microkit_msginfo_get_label(addr);
+
+    umass_bbb_methods_pointer = (uintptr_t) get_umass_bbb_methods();
+    addr = microkit_ppcall(6, seL4_MessageInfo_new((uint64_t) umass_bbb_methods_pointer,1,0,0));
+    umass_bbb_methods_pointer_other = microkit_msginfo_get_label(addr);
+
+    device_bulk_pointer = (uintptr_t) get_device_bulk_methods();
+    addr = microkit_ppcall(9, seL4_MessageInfo_new((uint64_t) device_bulk_pointer,1,0,0));
+    device_bulk_pointer_other = (uintptr_t) microkit_msginfo_get_label(addr);
+    
     device_intr_pointer = (uintptr_t) get_device_intr_methods();
     addr = microkit_ppcall(4, seL4_MessageInfo_new((uint64_t) device_intr_pointer,1,0,0));
     device_intr_pointer_other = (uintptr_t) microkit_msginfo_get_label(addr);
+
     addr = microkit_ppcall(8, seL4_MessageInfo_new(0,0,0,0));
     intr_ptrs = (struct intr_ptrs_holder *) microkit_msginfo_get_label(addr);
 

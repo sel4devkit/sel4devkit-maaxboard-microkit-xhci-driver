@@ -36,7 +36,7 @@ LD := $(TOOLCHAIN)-ld
 AS := $(TOOLCHAIN)-as
 MICROKIT_TOOL ?= $(MICROKIT_SDK)/bin/microkit
 
-NETBSD_SRC			:=  dev_verbose.o subr_device.o subr_autoconf.o usbdi_util.o usbdi.o usbroothub.o sel4_bus_funcs.o dma.o usb.o usb_quirks.o usb_subr.o xhci.o usb_mem.o uhub.o hid.o uhidev.o ukbd.o ums.o uts.o hidms.o hidkbdmap.o ioconf.o tpcalib.o uhid.o
+NETBSD_SRC			:=  dev_verbose.o subr_device.o subr_autoconf.o usbdi_util.o usbdi.o usbroothub.o sel4_bus_funcs.o dma.o usb.o usb_quirks.o usb_subr.o xhci.o usb_mem.o uhub.o hid.o uhidev.o ukbd.o ums.o uts.o hidms.o hidkbdmap.o ioconf.o tpcalib.o uhid.o umass.o umass_quirks.o umass_scsipi.o scsipi_base.o scsipiconf.o scsiconf.o scsi_base.o scsi_subr.o scsipi_ioctl.o heapsort.o strnvisx.o sd.o dksubr.o subr_disk.o subr_humanize.o hexdump.o
 UTILS				:= 	tinyalloc.o printf.o util.o timer.o
 
 XHCI_STUB_OBJS 		:=  xhci_stub.o $(NETBSD_SRC) imx8mq_usbphy.o dwc3_fdt.o shared_ringbuffer.o $(UTILS)
@@ -119,10 +119,58 @@ $(BUILD_DIR)/ums.o: $(NETBSD_DIR)/sys/dev/usb/ums.c Makefile
 $(BUILD_DIR)/xhci.o: $(NETBSD_DIR)/sys/dev/usb/xhci.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
+$(BUILD_DIR)/strnvisx.o: $(NETBSD_DIR)/sys/lib/libkern/strnvisx.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/umass.o: $(NETBSD_DIR)/sys/dev/usb/umass.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/umass_scsipi.o: $(NETBSD_DIR)/sys/dev/usb/umass_scsipi.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/umass_quirks.o: $(NETBSD_DIR)/sys/dev/usb/umass_quirks.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/scsiconf.o: $(NETBSD_DIR)/sys/dev/scsipi/scsiconf.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/scsipi_base.o: $(NETBSD_DIR)/sys/dev/scsipi/scsipi_base.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/scsipiconf.o: $(NETBSD_DIR)/sys/dev/scsipi/scsipiconf.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/scsi_base.o: $(NETBSD_DIR)/sys/dev/scsipi/scsi_base.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/scsi_subr.o: $(NETBSD_DIR)/sys/dev/scsipi/scsi_subr.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/scsipi_ioctl.o: $(NETBSD_DIR)/sys/dev/scsipi/scsipi_ioctl.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/sd.o: $(NETBSD_DIR)/sys/dev/scsipi/sd.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/dksubr.o: $(NETBSD_DIR)/sys/dev/dksubr.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/hexdump.o: $(NETBSD_DIR)/sys/lib/libkern/hexdump.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/heapsort.o: $(NETBSD_DIR)/common/lib/libc/stdlib/heapsort.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
 $(BUILD_DIR)/subr_autoconf.o: $(NETBSD_DIR)/sys/kern/subr_autoconf.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/subr_device.o: $(NETBSD_DIR)/sys/kern/subr_device.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/subr_disk.o: $(NETBSD_DIR)/sys/kern/subr_disk.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/subr_humanize.o: $(NETBSD_DIR)/sys/kern/subr_humanize.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/kern_pmf.o: $(NETBSD_DIR)/sys/kern/kern_pmf.c Makefile

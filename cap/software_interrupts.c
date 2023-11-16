@@ -5,6 +5,7 @@
 #include <machine/bus_funcs.h>
 
 #include <dev/usb/xhcivar.h>
+#include <dev/usb/umassvar.h>
 
 #include <wrapper.h>
 #include <tinyalloc.h>
@@ -65,6 +66,10 @@ struct usbd_pipe_methods *device_ctrl_pointer_other;
 struct usbd_pipe_methods *device_intr_pointer;
 struct usbd_pipe_methods *device_intr_pointer_other;
 struct intr_ptrs_holder *intr_ptrs;
+struct umass_wire_methods *umass_bbb_methods_pointer;
+struct umass_wire_methods *umass_bbb_methods_pointer_other;
+struct usbd_pipe_methods *device_bulk_pointer;
+struct usbd_pipe_methods *device_bulk_pointer_other;
 int cold = 1;
 
 /* Pointers to shared_ringbuffers */
@@ -72,11 +77,15 @@ ring_handle_t *kbd_buffer_ring;
 
 void
 init(void) {
+
+    config_init();
     cold = 0;
     xhci_bus_methods_ptr = get_bus_methods();
     xhci_root_intr_pointer = get_root_intr_methods();
     device_ctrl_pointer = get_device_methods();
     device_intr_pointer = get_device_intr_methods();
+    umass_bbb_methods_pointer = get_umass_bbb_methods();
+    device_bulk_pointer = get_device_bulk_methods();
     pipe_thread = false;
     sel4_dma_init(dma_cp_paddr, dma_cp_vaddr, dma_cp_vaddr + 0x200000);
     initialise_and_start_timer(timer_base);
@@ -128,16 +137,27 @@ protected(microkit_channel ch, microkit_msginfo msginfo) {
             usbd_status err = usbd_set_config_index(cfg->dev, cfg->confi, cfg->msg);
             printf("reached end of set_conf_index\n");
             return seL4_MessageInfo_new(err,1,0,0);
+        case 6:
+            umass_bbb_methods_pointer_other = (struct umass_wire_methods *) microkit_msginfo_get_label(msginfo);
+            printf("sending umass_bbb_methods_pointer: %p\n", umass_bbb_methods_pointer);
+            return seL4_MessageInfo_new((uint64_t) umass_bbb_methods_pointer, 1, 0, 0);
         case 8:
             // pass interrupt structures so callback can be used without hardcoding
             intr_ptrs = kmem_alloc(sizeof(struct intr_ptrs_holder), 0);
-            intr_ptrs->ukbd     = &ukbd_intr;
-            intr_ptrs->ums      = &ums_intr;
-            intr_ptrs->uts      = &uts_intr;
-            intr_ptrs->uhidev   = &uhidev_intr;
-            intr_ptrs->uhub     = &uhub_intr;
-            intr_ptrs->uhid     = &uhid_intr;
+            intr_ptrs->ukbd             = &ukbd_intr;
+            intr_ptrs->ums              = &ums_intr;
+            intr_ptrs->uts              = &uts_intr;
+            intr_ptrs->uhidev           = &uhidev_intr;
+            intr_ptrs->uhub             = &uhub_intr;
+            intr_ptrs->uhid             = &uhid_intr;
+            intr_ptrs->umass_wire_state = get_umass_wire_state();
+            intr_ptrs->umass_scsipi_cb  = get_umass_scsipi_cb();
+            intr_ptrs->umass_null_cb    = get_umass_null_cb();
             return seL4_MessageInfo_new((uint64_t) intr_ptrs, 1, 0, 0);
+        case 9:
+            device_bulk_pointer_other = (struct usbd_pipe_methods *) microkit_msginfo_get_label(msginfo);
+            printf("sending device_bulk_pointer: %p\n", device_bulk_pointer);
+            return seL4_MessageInfo_new((uint64_t) device_bulk_pointer, 1, 0, 0);
         default:
             printf("softintr unexpected channel %d\n", ch);
     }
