@@ -53,6 +53,8 @@ uintptr_t umass_bbb_methods_pointer;
 uintptr_t umass_bbb_methods_pointer_other;
 uintptr_t rx_free;
 uintptr_t rx_used;
+uintptr_t mse_free;
+uintptr_t mse_used;
 uintptr_t tx_free;
 uintptr_t tx_used;
 
@@ -89,6 +91,7 @@ struct usb_softc *usb_sc, *usb_sc2;
 
 /* Pointers to shared_ringbuffers */
 ring_handle_t *kbd_buffer_ring;
+ring_handle_t *mse_buffer_ring;
 
 void
 init(void) {
@@ -170,9 +173,12 @@ init(void) {
         fdtbus_get_reg(dwc3_phandle, 0, &addr, &size);
     }
 
+    // setup api rings
+    kbd_buffer_ring = kmem_alloc(sizeof(*kbd_buffer_ring), 0);
+    mse_buffer_ring = kmem_alloc(sizeof(*mse_buffer_ring), 0);
+
     // setup xhci devices + tell software PD memory locations
     device_t parent_xhci = NULL;
-    kbd_buffer_ring = kmem_alloc(sizeof(*kbd_buffer_ring), 0);
 
     device_t self_xhci = kmem_alloc(sizeof(device_t), 0);
     struct fdt_attach_args *aux_xhci = kmem_alloc(sizeof(struct fdt_attach_args), 0);
@@ -218,9 +224,7 @@ init(void) {
     print_info("Initialised\n");
     usb_discover(usb_sc);
     usb_discover(usb_sc2);
-    printf("===================\n");
-    printf(" xHCI driver ready \n");
-    printf("===================\n");
+	microkit_notify(42); //notify client xhci is up and running
 }
 
 

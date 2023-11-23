@@ -53,6 +53,8 @@ uintptr_t rx_cookies;
 uintptr_t tx_cookies;
 uintptr_t rx_free;
 uintptr_t rx_used;
+uintptr_t mse_free;
+uintptr_t mse_used;
 uintptr_t tx_free;
 uintptr_t tx_used;
 
@@ -76,6 +78,7 @@ int cold = 1;
 
 /* Pointers to shared_ringbuffers */
 ring_handle_t *kbd_buffer_ring;
+ring_handle_t *mse_buffer_ring;
 
 void
 init(void) {
@@ -94,6 +97,8 @@ init(void) {
 
     kbd_buffer_ring = kmem_alloc(sizeof(*kbd_buffer_ring), 0);
     ring_init(kbd_buffer_ring, (ring_buffer_t *)rx_free, (ring_buffer_t *)rx_used, NULL, 0);
+    mse_buffer_ring = kmem_alloc(sizeof(*mse_buffer_ring), 0);
+    ring_init(mse_buffer_ring, (ring_buffer_t *)mse_free, (ring_buffer_t *)mse_used, NULL, 0);
     print_info("Initialised\n");
 }
 
