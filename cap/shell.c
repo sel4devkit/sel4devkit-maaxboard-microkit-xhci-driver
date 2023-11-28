@@ -6,7 +6,6 @@
 #include <lib/libkern/libkern.h>
 #include <pdprint.h>
 #include <sys/kmem.h>
-#include <api.h>
 
 #include <dev/wscons/wsksymdef.h>
 
@@ -32,7 +31,8 @@ char cmd[CMD_LIMIT];
 #define CMD_HISTORY 1024
 static int cursor_index = 0;
 char *history[CMD_HISTORY];
-static int cmd_hist = 0;
+static int cmd_hist = -1;
+static int cmd_hist_cursor = 0;
 
 //keyboard specifics
 extern const keysym_t hidkbd_keydesc_us[];
@@ -40,6 +40,7 @@ extern const keysym_t hidkbd_keydesc_uk[];
 #define CODEMASK 0x0ff
 #define KC(n)		KS_KEYCODE(n)
 bool kbd_enabled = false;
+bool mousetest = false;
 
 // heap
 uintptr_t heap_base;
@@ -116,16 +117,93 @@ decode_command() {
                 kbd_enabled = true;
                 printf("keyboard enabled!!!\n");
             }
+        } else if (!strcmp(parsedArgs[0], "history")) {
+            printf("cmd_hist %d\n", cmd_hist);
+            for (int c = 0; c < cmd_hist; c++) {
+                printf("hist %d: %s\n", c, history[c]);
+            }
+        
+        } else if (!strcmp(parsedArgs[0], "mousetest")) {
+            mousetest = true;
+            cmd_hist++;
+            history[cmd_hist] = kmem_alloc(sizeof(cmd),0);
+            strncpy(history[cmd_hist], cmd, sizeof(cmd));
+            cmd_hist_cursor = cmd_hist+1;
+            memset(cmd, '\0', sizeof(cmd));
+            printf("\n");
+            cursor_index = 0;
+            init_mousetest();
+            return;
         } else {
             printf("%s is not a recognised command!\n", parsedArgs[0]);
         }
-        history[cmd_hist] = cmd;
         cmd_hist++;
+        history[cmd_hist] = kmem_alloc(sizeof(cmd),0);
+        strncpy(history[cmd_hist], cmd, sizeof(cmd));
+        cmd_hist_cursor = cmd_hist+1;
         memset(cmd, '\0', sizeof(cmd));
         printf("\n");
     }
     printf("seL4 test>>> ");
     cursor_index = 0;
+}
+
+void clear_prompt() {
+    printf("\rseL4 test>>>");
+    for (int i = 0; i <= strlen(cmd); i++) {
+        printf(" ");
+    }
+    printf("\rseL4 test>>> ");
+}
+
+void
+scroll_hist(int direction) {
+    if (cmd_hist_cursor <= 0 & direction <= -1)
+        return;
+    clear_prompt();
+    if (cmd_hist_cursor + direction <= cmd_hist && cmd_hist_cursor + direction >= 0) {
+        cmd_hist_cursor+=direction;
+        strncpy(cmd, history[cmd_hist_cursor], sizeof(history[cmd_hist_cursor]));
+        /* cmd = history[cmd_hist_cursor++]; */
+    } else {
+        strncpy(cmd, "", sizeof(""));
+    }
+    cursor_index = strlen(cmd);
+    printf("%s", cmd);
+}
+
+void
+init_mousetest() {
+    printf("\n");
+    printf("\n");
+    printf("x: %04d\n", 0);
+    printf("y: %04d\n", 0);
+    printf("w: %04d\n", 0);
+    printf("\n\n\n");
+}
+
+void
+handle_mouseTest()
+{
+    uintptr_t *buffer = 0;
+    unsigned int len = 0;
+    void *cookie = NULL;
+
+    int index;
+    while (!driver_dequeue(mse_buffer_ring->used_ring, (uintptr_t**)&buffer, &len, &cookie)) {
+        printf("%c%c%c%c%c%c\r", 61707,61707,61707,61707,61707,61707);
+        printf("x: %04d\n", buffer[0]);
+        printf("y: %04d\n", buffer[1]);
+        printf("w: %04d\n", buffer[2]);
+        if (buffer[4] & 0x1)
+            printf("left ");
+        if (buffer[4] & 0x2)
+            printf("mid ");
+        if (buffer[4] & 0x4)
+            printf("right ");
+        printf("                ");
+        printf("\n\n\n");
+    }
 }
 
 static void 
@@ -137,7 +215,11 @@ handle_mouseEvent()
 
     int index;
     while (!driver_dequeue(mse_buffer_ring->used_ring, (uintptr_t**)&buffer, &len, &cookie)) {
-        printf("MOUSE EVENT: 0x%08x\n", buffer[0]);
+        if ((int)buffer[2] <= -1) {
+            scroll_hist(-1);
+        } else if ((int)buffer[2] >= 1) {
+            scroll_hist(1);
+        }
     }
 }
 
@@ -164,27 +246,43 @@ handle_keypress()
             }
         }
         keysym_t keypress = hidkbd_keydesc_us[index + lowercaseAdd + shiftOrControl];
-        switch(keypress) {
-            case KS_BackSpace:
-                if (cursor_index > 0) {
-                    printf("%c %c", keypress, keypress);
-                    cursor_index--;
-                }
-                break;
-            case KS_Return:
-                printf("\n");
-                decode_command();
-                break;
-            default:
-                if (cursor_index < CMD_LIMIT) {
-                    if (keypress >= KS_a && keypress <= KS_z || keypress >= KS_A && keypress <= KS_Z || keypress >= KS_0 && keypress <= KS_9 || keypress == KS_space) {
-                        if (keypress == KS_space)
-                            keypress = ' ';
-                        printf("%c", keypress);
-                        cmd[cursor_index] = keypress;
-                        cursor_index++;
+        if (!mousetest) {
+            switch(keypress) {
+                case KS_BackSpace:
+                    if (cursor_index > 0) {
+                        printf("%c %c", keypress, keypress);
+                        cursor_index--;
                     }
-                }
+                    break;
+                case KS_Return:
+                    printf("\n");
+                    decode_command();
+                    break;
+                case KS_Up:
+                    scroll_hist(-1);
+                    break;
+                case KS_Down:
+                    scroll_hist(1);
+                    break;
+                default:
+                    if (cursor_index < CMD_LIMIT) {
+                        if (keypress >= KS_a && keypress <= KS_z || keypress >= KS_A && keypress <= KS_Z || keypress >= KS_0 && keypress <= KS_9 || keypress == KS_space) {
+                            if (keypress == KS_space)
+                                keypress = ' ';
+                            printf("%c", keypress);
+                            cmd[cursor_index] = keypress;
+                            cursor_index++;
+                        /* } else { */
+                        /*     printf("\n%d\n", keypress); */
+                        }
+                    }
+            }
+        } else {
+            if (buffer[0] & 0x01 && keypress == KS_c) {
+                mousetest = false;
+                printf("\nEnd of mouse test\n");
+                clear_prompt();
+            }
         }
     }
 }
@@ -208,6 +306,11 @@ void
 notified(microkit_channel ch) {
     switch(ch) {
         case INIT:
+            history[0] = "test";
+            history[1] = "test1";
+            history[2] = "test2";
+            cmd_hist_cursor = 2;
+            cmd_hist = 2;
             init_shell();
             break;
         case 45:
@@ -215,8 +318,10 @@ notified(microkit_channel ch) {
                 handle_keypress();
             break;
         case 46:
-            handle_mouseEvent();
-            printf("received Mouse event (what do you want me to do with this)\n");
+            if (mousetest)
+                handle_mouseTest();
+            else
+                handle_mouseEvent();
             break;
         default:
             printf("SHELL: Unexpected channel %d\n", ch);
