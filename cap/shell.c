@@ -203,6 +203,7 @@ handle_mouseTest()
             printf("right ");
         printf("                ");
         printf("\n\n\n");
+        kmem_free(buffer, sizeof(buffer));
     }
 }
 
@@ -220,6 +221,7 @@ handle_mouseEvent()
         } else if ((int)buffer[2] >= 1) {
             scroll_hist(1);
         }
+        kmem_free(buffer, sizeof(buffer));
     }
 }
 
@@ -284,6 +286,7 @@ handle_keypress()
                 clear_prompt();
             }
         }
+        kmem_free(buffer, sizeof(buffer));
     }
 }
 
