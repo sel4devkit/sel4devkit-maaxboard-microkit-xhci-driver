@@ -6,6 +6,12 @@
 #include <lib/libkern/libkern.h>
 #include <pdprint.h>
 #include <sys/kmem.h>
+#include <api.h>
+
+#define HEXDUMP(a, b, c) \
+    do { \
+		hexdump(printf, a, b, c); \
+    } while (/*CONSTCOND*/0)
 
 #include <dev/wscons/wsksymdef.h>
 
@@ -16,10 +22,13 @@ uintptr_t rx_free;
 uintptr_t rx_used;
 uintptr_t mse_free;
 uintptr_t mse_used;
+uintptr_t umass_req_free;
+uintptr_t umass_req_used;
 
 /* Pointers to shared_ringbuffers */
 ring_handle_t *kbd_buffer_ring;
 ring_handle_t *mse_buffer_ring;
+ring_handle_t *umass_buffer_ring;
 
 //shell globals
 #define MAX_KEYS 256
@@ -60,8 +69,27 @@ char *pd_name = "shell";
 /* #define alloc(x) kmem_alloc(x, 0) */
 #define alloc(x) ta_alloc(x)
 
+int
+atoi(const char *in)
+{
+	char *c;
+	int ret;
+
+	ret = 0;
+	c = __UNCONST(in);
+	if (*c == '-')
+		c++;
+	for (; isdigit(*c); c++)
+		ret = (ret * 10) + (*c - '0');
+
+	return (*in == '-') ? -ret : ret;
+}
+
+
 void
 init_shell() {
+    umass_api_init();
+
     printf("                                                                                 \n");
     printf("                                                                                 \n");
     printf("    .d8888. d88888b db        j88D    .d8888. db   db d88888b db      db         \n");
@@ -101,6 +129,20 @@ void parseSpace(char* str, char** parsed)
     } 
 } 
 
+void print_blocks(struct umass_request *xfer) {
+    // TODO: HEXDUMP
+    HEXDUMP("read", xfer->val, (512 * xfer->nblks));
+    printf("inside print_blocks\n");
+    //printf("%d\n", xfer->val);
+}
+
+void write_complete(struct umass_request *xfer) {
+    // TODO: HEXDUMP
+    //HEXDUMP("read", xfer->val, (512 * xfer->nblks));
+    printf("\n\nWrite complete\n");
+    //printf("%d\n", xfer->val);
+}
+
 void
 decode_command() {
     char *parsedArgs[ARGMAX];
@@ -134,6 +176,24 @@ decode_command() {
             cursor_index = 0;
             init_mousetest();
             return;
+        } else if (!strcmp(parsedArgs[0], "read")) {
+            int blkno = atoi(parsedArgs[1]);
+            int nblks = atoi(parsedArgs[2]);
+            char* val = kmem_alloc((512 * nblks), 0);
+            enqueue_umass_request(0 ,true, blkno, nblks, val, &print_blocks);
+        } else if (!strcmp(parsedArgs[0], "write")) {
+            int blkno = atoi(parsedArgs[1]);
+            int nblks = atoi(parsedArgs[2]);
+            char* val = kmem_alloc((512 * nblks), 0);
+            strncpy(val, parsedArgs[3], sizeof(parsedArgs[3]));
+            enqueue_umass_request(0 ,false, blkno, nblks, val, &write_complete);
+        } else if (!strcmp(parsedArgs[0], "rw")) {
+            char* val2 = kmem_alloc((512 * 1), 0);
+            char* val = kmem_alloc((512 * 8), 0);
+            strncpy(val, parsedArgs[1], sizeof(parsedArgs[1]));
+            enqueue_umass_request(0 ,false, 1, 8, val, &write_complete);
+            printf("between\n");
+            enqueue_umass_request(0 ,true, 1, 1, val2, &print_blocks);
         } else {
             printf("%s is not a recognised command!\n", parsedArgs[0]);
         }
@@ -302,6 +362,8 @@ init(void) {
     ring_init(kbd_buffer_ring, (ring_buffer_t *)rx_free, (ring_buffer_t *)rx_used, NULL, 0);
     mse_buffer_ring = alloc(sizeof(*mse_buffer_ring));
     ring_init(mse_buffer_ring, (ring_buffer_t *)mse_free, (ring_buffer_t *)mse_used, NULL, 0);
+    umass_buffer_ring = alloc(sizeof(*umass_buffer_ring));
+    ring_init(umass_buffer_ring, (ring_buffer_t *)umass_req_free, (ring_buffer_t *)umass_req_used, NULL, 0);
     print_info("Initialised\n");
 }
 
@@ -325,6 +387,9 @@ notified(microkit_channel ch) {
                 handle_mouseTest();
             else
                 handle_mouseEvent();
+            break;
+        case 48:
+            handle_xfer_complete();
             break;
         default:
             printf("SHELL: Unexpected channel %d\n", ch);
