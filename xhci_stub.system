@@ -212,4 +212,9 @@
         <end pd="software_interrupt" id="46"/>
         <end pd="shell" id="46"/>
     </channel>
+    <channel>
+        <!-- Umass Read Block -->
+        <end pd="xhci_stub" id="47"/>
+        <end pd="shell" id="47"/>
+    </channel>
 </system>

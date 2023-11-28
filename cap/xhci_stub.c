@@ -19,6 +19,7 @@
 
 #include <timer.h>
 #include <shared_ringbuffer.h>
+#include <dev/scsipi/scsiconf.h>
 #include <dev/usb/usb.h>
 #include <dev/usb/usbdi.h>
 #include <dev/usb/usbdivar.h>
@@ -245,6 +246,10 @@ notified(microkit_channel ch)
                 usb_discover(usb_sc2);
                 print_info("USB2 discover finished\n");
             }
+            break;
+        case 47:
+            printf("calling read_block\n");
+            read_block(1, 1);
             break;
         default:
             print_warn("xhci_stub received notification unexpected channel\n");

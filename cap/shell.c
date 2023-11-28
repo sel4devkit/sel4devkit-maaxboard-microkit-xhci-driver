@@ -134,6 +134,9 @@ decode_command() {
             cursor_index = 0;
             init_mousetest();
             return;
+        } else if (!strcmp(parsedArgs[0], "read")) {
+            microkit_notify(47);
+            //read_block(1, 1);
         } else {
             printf("%s is not a recognised command!\n", parsedArgs[0]);
         }
