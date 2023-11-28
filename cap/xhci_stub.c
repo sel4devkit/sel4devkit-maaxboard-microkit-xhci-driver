@@ -31,6 +31,7 @@
 #include <machine/types.h>
 #include <sel4_bus_funcs.h>
 #include <libfdt.h>
+#include <api.h>
 
 #include <lib/libkern/libkern.h>
 #include <dev/fdt/fdtvar.h>
@@ -58,6 +59,8 @@ uintptr_t mse_free;
 uintptr_t mse_used;
 uintptr_t tx_free;
 uintptr_t tx_used;
+uintptr_t umass_req_free;
+uintptr_t umass_req_used;
 
 struct intr_ptrs_holder *intr_ptrs;
 bool pipe_thread;
@@ -93,6 +96,7 @@ struct usb_softc *usb_sc, *usb_sc2;
 /* Pointers to shared_ringbuffers */
 ring_handle_t *kbd_buffer_ring;
 ring_handle_t *mse_buffer_ring;
+ring_handle_t *umass_buffer_ring;
 
 void
 init(void) {
@@ -228,6 +232,26 @@ init(void) {
 	microkit_notify(42); //notify client xhci is up and running
 }
 
+void handle_umass_xfer()
+{
+    uintptr_t *buffer = 0;
+    unsigned int len = 0;
+    void *cookie = NULL;
+
+    int index;
+    while (!driver_dequeue(umass_buffer_ring->used_ring, (uintptr_t**)&buffer, &len, &cookie)) {
+        struct umass_request* xfer = (struct umass_request*)buffer; 
+
+        if (xfer->read) {
+            printf("calling read_block: n: %i    s: %i\n", xfer->nblks, xfer->blkno);
+            read_block(xfer->blkno, xfer->nblks, xfer->val);
+        } else {
+            printf("calling write_block: n: %i    s: %i\n", xfer->nblks, xfer->blkno);
+            write_block(xfer->blkno, xfer->nblks, xfer->val);
+        }
+    }
+    // TODO: xfer complete
+}
 
 
 void
@@ -248,8 +272,7 @@ notified(microkit_channel ch)
             }
             break;
         case 47:
-            printf("calling read_block\n");
-            read_block(1, 1);
+            handle_umass_xfer();
             break;
         default:
             print_warn("xhci_stub received notification unexpected channel\n");
