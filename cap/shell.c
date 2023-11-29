@@ -352,9 +352,9 @@ handle_keypress()
 void
 init(void) {
     ta_limit = heap_base + heap_size;
-    bool error = ta_init((void*)heap_base, (void*)ta_limit, ta_blocks, ta_thresh, ta_align);
-    if (!error) {
-        print_fatal("Heap initialisation failure %d\n", error);
+    bool status = ta_init((void*)heap_base, (void*)ta_limit, ta_blocks, ta_thresh, ta_align);
+    if (!status) {
+        print_fatal("Heap initialisation failure %d\n", status);
         return 0;
     }
     kbd_buffer_ring = alloc(sizeof(*kbd_buffer_ring));

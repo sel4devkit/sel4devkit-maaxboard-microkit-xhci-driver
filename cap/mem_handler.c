@@ -42,7 +42,7 @@ void
 init(void) {
     ta_limit = heap_base + heap_size;
     print_debug("Heap from %p to %p\n", heap_base, ta_limit);
-    bool error = ta_init((void*)heap_base, (void*)ta_limit, ta_blocks, ta_thresh, ta_align);
+    bool status = ta_init((void*)heap_base, (void*)ta_limit, ta_blocks, ta_thresh, ta_align);
     fdt = ta_alloc(incbin_device_tree_end - incbin_device_tree_start);
     memcpy(fdt, incbin_device_tree_start, incbin_device_tree_end - incbin_device_tree_start);
     print_info("Initialised\n");
