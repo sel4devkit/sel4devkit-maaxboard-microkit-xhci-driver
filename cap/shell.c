@@ -388,6 +388,6 @@ notified(microkit_channel ch) {
             handle_xfer_complete();
             break;
         default:
-            printf("SHELL: Unexpected channel %d\n", ch);
+            print_warn("Unexpected channel %d\n", ch);
     }
 }
