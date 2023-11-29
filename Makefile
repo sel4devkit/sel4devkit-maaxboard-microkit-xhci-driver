@@ -44,7 +44,7 @@ XHCI_STUB_OBJS 		:=  xhci_stub.o $(NETBSD_SRC) $(FDT_SRC) imx8mq_usbphy.o dwc3_f
 SOFTWARE_OBJS 		:=  software_interrupts.o $(NETBSD_SRC) $(FDT_SRC) imx8mq_usbphy.o dwc3_fdt.o $(UTILS) shared_ringbuffer.o
 HARDWARE_OBJS 		:=  hardware_interrupts.o sel4_bus_funcs.o $(UTILS)
 MEM_OBJS			:=  mem_handler.o tinyalloc.o printf.o util.o
-SHELL_OBJS 			:=  shell.o hidkbdmap.o shared_ringbuffer.o printf.o tinyalloc.o util.o api.o hexdump.o
+SHELL_OBJS 			:=  shell.o hidkbdmap.o shared_ringbuffer.o printf.o tinyalloc.o util.o xhci_api.o hexdump.o
 SIMULATED_KBD_OBJS	:=  simulated_kbd.o printf.o tinyalloc.o
 
 BOARD_DIR := $(MICROKIT_SDK)/board/$(MICROKIT_BOARD)/$(MICROKIT_CONFIG)

@@ -1,4 +1,4 @@
-#include <api.h>
+#include <xhci_api.h>
 #include <stddef.h>
 #include <stdbool.h>
 #include <shared_ringbuffer.h>
@@ -11,18 +11,18 @@ ring_handle_t *api_request_ring;
 extern ring_handle_t *umass_buffer_ring;
 
 static int current_xfer = -1;
-
 static bool locked = false;
-
 struct umass_request *active_xfer;
+
+int execute_next();
 
 /**
  * umass_api_init(): initialise rings required by api
 */
 void umass_api_init() {
     api_request_ring = kmem_alloc(sizeof(ring_buffer_t), 0);
-    umass_free = kmem_alloc(0x200000, 0);
-    umass_used = kmem_alloc(0x200000, 0);
+    umass_free = (uintptr_t) kmem_alloc(0x200000, 0);
+    umass_used = (uintptr_t) kmem_alloc(0x200000, 0);
     ring_init(api_request_ring, (ring_buffer_t *)umass_free, (ring_buffer_t *)umass_used, NULL, 1);
 }
 
@@ -40,7 +40,7 @@ int enqueue_umass_request(int dev_id, bool read, int blkno, int nblks, void* val
     umass_xfer->cb = cb;
     umass_xfer->xfer_id = xfer_id;
 
-    enqueue_used(api_request_ring, umass_xfer, sizeof(umass_xfer), (void*)0);
+    enqueue_used(api_request_ring, (uintptr_t) umass_xfer, sizeof(umass_xfer), (void*)0);
 
     // ensure reads and writes are executed in the order they arrived
     if (!locked) {
@@ -59,12 +59,12 @@ int execute_next() {
     void *cookie = NULL;
 
     int index;
-    if (!driver_dequeue(api_request_ring->used_ring, (uintptr_t**)&buffer, &len, &cookie)) {
+    if (!driver_dequeue(api_request_ring->used_ring, (uintptr_t*)&buffer, &len, &cookie)) {
         struct umass_request* xfer = (struct umass_request*)buffer; 
         printf("xfer_id: %i    blkno: %i    nblks: %i\n", xfer->xfer_id, xfer->blkno, xfer->nblks);
         active_xfer = xfer;
 
-        bool empty = ring_empty(umass_buffer_ring);
+        bool empty = ring_empty(umass_buffer_ring->used_ring);
         int error = enqueue_used(umass_buffer_ring, (uintptr_t) xfer, sizeof(xfer), (void *)0);
         if (empty)
             microkit_notify(47);
@@ -75,6 +75,9 @@ int execute_next() {
     }
 }
 
+/**
+ * Handle completed umass request. Does callback, and enqueues next request if there is one
+*/
 void handle_xfer_complete()
 {
     // do callback

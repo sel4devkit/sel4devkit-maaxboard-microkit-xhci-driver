@@ -31,7 +31,7 @@
 #include <machine/types.h>
 #include <sel4_bus_funcs.h>
 #include <libfdt.h>
-#include <api.h>
+#include <xhci_api.h>
 
 #include <lib/libkern/libkern.h>
 #include <dev/fdt/fdtvar.h>

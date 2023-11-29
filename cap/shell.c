@@ -6,7 +6,7 @@
 #include <lib/libkern/libkern.h>
 #include <pdprint.h>
 #include <sys/kmem.h>
-#include <api.h>
+#include <xhci_api.h>
 
 #define HEXDUMP(a, b, c) \
     do { \
@@ -14,6 +14,8 @@
     } while (/*CONSTCOND*/0)
 
 #include <dev/wscons/wsksymdef.h>
+
+void init_mousetest();
 
 
 //rings for notifications
@@ -64,6 +66,8 @@ int ta_align = 64;
 
 // for pdprint
 char *pd_name = "shell";
+
+#define SECTOR_SIZE 512 //should get this from device information, hardcoded for now
 
 /* #define alloc(x) kmem_alloc(x, 0) */
 #define alloc(x) ta_alloc(x)
@@ -119,7 +123,6 @@ void parseSpace(char* str, char** parsed)
   
     for (i = 0; i < ARGMAX; i++) { 
         parsed[i] = strsep(&str, " "); 
-        // printf("new arg:%s\n", parsed[i]);
   
         if (parsed[i] == NULL) 
             break; 
@@ -133,7 +136,7 @@ void reset_prompt() {
 }
 
 void print_blocks(struct umass_request *xfer) {
-    HEXDUMP("read", xfer->val, (512 * xfer->nblks));
+    HEXDUMP("read", xfer->val, (SECTOR_SIZE * xfer->nblks));
     reset_prompt();
 }
 
@@ -178,17 +181,17 @@ decode_command() {
         } else if (!strcmp(parsedArgs[0], "read")) {
             int blkno = atoi(parsedArgs[1]);
             int nblks = atoi(parsedArgs[2]);
-            char* val = kmem_alloc((512 * nblks), 0);
+            char* val = kmem_alloc((SECTOR_SIZE * nblks), 0);
             enqueue_umass_request(0 ,true, blkno, nblks, val, &print_blocks);
         } else if (!strcmp(parsedArgs[0], "write")) {
             int blkno = atoi(parsedArgs[1]);
             int nblks = atoi(parsedArgs[2]);
-            char* val = kmem_alloc((512 * nblks), 0);
+            char* val = kmem_alloc((SECTOR_SIZE * nblks), 0);
             strncpy(val, parsedArgs[3], sizeof(parsedArgs[3]));
             enqueue_umass_request(0 ,false, blkno, nblks, val, &write_complete);
         } else if (!strcmp(parsedArgs[0], "rw")) {
-            char* val2 = kmem_alloc((512 * 1), 0);
-            char* val = kmem_alloc((512 * 8), 0);
+            char* val2 = kmem_alloc((SECTOR_SIZE * 1), 0);
+            char* val = kmem_alloc((SECTOR_SIZE * 8), 0);
             strncpy(val, parsedArgs[1], sizeof(parsedArgs[1]));
             enqueue_umass_request(0 ,false, 1, 8, val, &write_complete);
             printf("between\n");
@@ -217,13 +220,12 @@ void clear_prompt() {
 
 void
 scroll_hist(int direction) {
-    if (cmd_hist_cursor <= 0 & direction <= -1)
+    if ((cmd_hist_cursor <= 0) && direction <= -1)
         return;
     clear_prompt();
     if (cmd_hist_cursor + direction <= cmd_hist && cmd_hist_cursor + direction >= 0) {
         cmd_hist_cursor+=direction;
         strncpy(cmd, history[cmd_hist_cursor], sizeof(history[cmd_hist_cursor]));
-        /* cmd = history[cmd_hist_cursor++]; */
     } else {
         strncpy(cmd, "", sizeof(""));
     }
@@ -249,7 +251,7 @@ handle_mouseTest()
     void *cookie = NULL;
 
     int index;
-    while (!driver_dequeue(mse_buffer_ring->used_ring, (uintptr_t**)&buffer, &len, &cookie)) {
+    while (!driver_dequeue(mse_buffer_ring->used_ring, (uintptr_t*)&buffer, &len, &cookie)) {
         printf("%c%c%c%c%c%c\r", 61707,61707,61707,61707,61707,61707);
         printf("x: %04d\n", buffer[0]);
         printf("y: %04d\n", buffer[1]);
@@ -274,7 +276,7 @@ handle_mouseEvent()
     void *cookie = NULL;
 
     int index;
-    while (!driver_dequeue(mse_buffer_ring->used_ring, (uintptr_t**)&buffer, &len, &cookie)) {
+    while (!driver_dequeue(mse_buffer_ring->used_ring, (uintptr_t*)&buffer, &len, &cookie)) {
         if ((int)buffer[2] <= -1) {
             scroll_hist(-1);
         } else if ((int)buffer[2] >= 1) {
@@ -292,7 +294,7 @@ handle_keypress()
     void *cookie = NULL;
 
     int index;
-    while (!driver_dequeue(kbd_buffer_ring->used_ring, (uintptr_t**)&buffer, &len, &cookie)) {
+    while (!driver_dequeue(kbd_buffer_ring->used_ring, (uintptr_t*)&buffer, &len, &cookie)) {
         uint8_t keyPressed = ((char *) buffer)[2];
         if (keyPressed == 0)
             break;
@@ -327,14 +329,10 @@ handle_keypress()
                     break;
                 default:
                     if (cursor_index < CMD_LIMIT) {
-                        if (keypress >= KS_a && keypress <= KS_z || keypress >= KS_A && keypress <= KS_Z || keypress >= KS_0 && keypress <= KS_9 || keypress == KS_space) {
-                            if (keypress == KS_space)
-                                keypress = ' ';
+                        if ((keypress >= KS_a && keypress <= KS_z) || (keypress >= KS_A && keypress <= KS_Z) || (keypress >= KS_0 && keypress <= KS_9) || keypress == KS_space) {
                             printf("%c", keypress);
                             cmd[cursor_index] = keypress;
                             cursor_index++;
-                        /* } else { */
-                        /*     printf("\n%d\n", keypress); */
                         }
                     }
             }
