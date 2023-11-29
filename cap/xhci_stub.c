@@ -261,14 +261,14 @@ notified(microkit_channel ch)
         case 17: // hotplug
             // do a discover
             if (usb_sc->sc_bus->ub_needsexplore) {
-                print_info("Discover on USB3...\n");
+                print_debug("Discover on USB3...\n");
                 usb_discover(usb_sc);
-                print_info("USB3 discover finished\n");
+                print_debug("USB3 discover finished\n");
             }
             if (usb_sc2->sc_bus->ub_needsexplore) {
-                print_info("Discover on USB2...\n");
+                print_debug("Discover on USB2...\n");
                 usb_discover(usb_sc2);
-                print_info("USB2 discover finished\n");
+                print_debug("USB2 discover finished\n");
             }
             break;
         case 47:

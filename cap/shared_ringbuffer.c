@@ -5,9 +5,6 @@
  */
 
 #include "shared_ringbuffer.h"
-#include "printf.h"
-
-#include <dev/wscons/wsksymdef.h>
 
 void ring_init(ring_handle_t *ring, ring_buffer_t *free, ring_buffer_t *used, notify_fn notify, int buffer_init)
 {

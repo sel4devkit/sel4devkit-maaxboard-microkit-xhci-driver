@@ -225,6 +225,7 @@
         <end pd="shell" id="47"/>
     </channel>
     <channel>
+        <!-- Umass xfer complete -->
         <end pd="software_interrupt" id="48"/>
         <end pd="shell" id="48"/>
     </channel>

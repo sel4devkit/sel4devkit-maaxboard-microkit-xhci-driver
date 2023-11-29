@@ -150,7 +150,7 @@ protected(microkit_channel ch, microkit_msginfo msginfo) {
             return seL4_MessageInfo_new(err,1,0,0);
         case 6:
             umass_bbb_methods_pointer_other = (struct umass_wire_methods *) microkit_msginfo_get_label(msginfo);
-            printf("sending umass_bbb_methods_pointer: %p\n", umass_bbb_methods_pointer);
+            print_debug("sending umass_bbb_methods_pointer: %p\n", umass_bbb_methods_pointer);
             return seL4_MessageInfo_new((uint64_t) umass_bbb_methods_pointer, 1, 0, 0);
         case 8:
             // pass interrupt structures so callback can be used without hardcoding
@@ -167,7 +167,7 @@ protected(microkit_channel ch, microkit_msginfo msginfo) {
             return seL4_MessageInfo_new((uint64_t) intr_ptrs, 1, 0, 0);
         case 9:
             device_bulk_pointer_other = (struct usbd_pipe_methods *) microkit_msginfo_get_label(msginfo);
-            printf("sending device_bulk_pointer: %p\n", device_bulk_pointer);
+            print_debug("sending device_bulk_pointer: %p\n", device_bulk_pointer);
             return seL4_MessageInfo_new((uint64_t) device_bulk_pointer, 1, 0, 0);
         default:
             print_warn("softintr unexpected channel %d\n", ch);

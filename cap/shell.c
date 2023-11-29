@@ -15,7 +15,6 @@
 
 #include <dev/wscons/wsksymdef.h>
 
-#define INIT  44
 
 //rings for notifications
 uintptr_t rx_free;
@@ -51,7 +50,7 @@ extern const keysym_t hidkbd_keydesc_uk[];
 bool kbd_enabled = false;
 bool mousetest = false;
 
-// heap
+// heap(s)
 uintptr_t heap_base;
 uintptr_t other_heap_base;
 
@@ -129,18 +128,18 @@ void parseSpace(char* str, char** parsed)
     } 
 } 
 
+void reset_prompt() {
+    printf("\nseL4 test>>> ");
+}
+
 void print_blocks(struct umass_request *xfer) {
-    // TODO: HEXDUMP
     HEXDUMP("read", xfer->val, (512 * xfer->nblks));
-    printf("inside print_blocks\n");
-    //printf("%d\n", xfer->val);
+    reset_prompt();
 }
 
 void write_complete(struct umass_request *xfer) {
-    // TODO: HEXDUMP
-    //HEXDUMP("read", xfer->val, (512 * xfer->nblks));
     printf("\n\nWrite complete\n");
-    //printf("%d\n", xfer->val);
+    reset_prompt();
 }
 
 void
@@ -371,24 +370,21 @@ void
 notified(microkit_channel ch) {
     switch(ch) {
         case INIT:
-            history[0] = "test";
-            history[1] = "test1";
-            history[2] = "test2";
-            cmd_hist_cursor = 2;
-            cmd_hist = 2;
+            cmd_hist_cursor = 0;
+            cmd_hist = -1;
             init_shell();
             break;
-        case 45:
+        case KEYBOARD_EVENT:
             if (kbd_enabled)
                 handle_keypress();
             break;
-        case 46:
+        case MOUSE_EVENT:
             if (mousetest)
                 handle_mouseTest();
             else
                 handle_mouseEvent();
             break;
-        case 48:
+        case UMASS_COMPLETE:
             handle_xfer_complete();
             break;
         default:
