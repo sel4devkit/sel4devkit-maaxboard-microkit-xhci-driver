@@ -141,13 +141,19 @@ void print_blocks(struct umass_request *xfer) {
 }
 
 void write_complete(struct umass_request *xfer) {
-    printf("\n\nWrite complete\n");
+    printf("\nWrite complete\n");
     reset_prompt();
 }
 
 void
 decode_command() {
     char *parsedArgs[ARGMAX];
+
+    // set all index to null for error catching
+    for (int i = 0; i < ARGMAX; i++) {
+        parsedArgs[i] = NULL;
+    }
+
     if (cursor_index > 0) {
         cmd[cursor_index] = '\0';
         parseSpace(cmd, parsedArgs);
@@ -179,16 +185,30 @@ decode_command() {
             init_mousetest();
             return;
         } else if (!strcmp(parsedArgs[0], "read")) {
-            int blkno = atoi(parsedArgs[1]);
-            int nblks = atoi(parsedArgs[2]);
-            char* val = kmem_alloc((SECTOR_SIZE * nblks), 0);
-            enqueue_umass_request(0 ,true, blkno, nblks, val, &print_blocks);
+            // catch invalid arguments
+            if (parsedArgs[3] != NULL || parsedArgs[1] == NULL || parsedArgs[2] == NULL | parsedArgs[2] < 1) {
+                printf("Invalid Args\n");
+                printf("Usage: read [blkno] [nblks]\n");
+                reset_prompt();
+            } else {
+                int blkno = atoi(parsedArgs[1]);
+                int nblks = atoi(parsedArgs[2]);
+                char* val = kmem_alloc((SECTOR_SIZE * nblks), 0);
+                enqueue_umass_request(0 ,true, blkno, nblks, val, &print_blocks);
+            }
         } else if (!strcmp(parsedArgs[0], "write")) {
-            int blkno = atoi(parsedArgs[1]);
-            int nblks = atoi(parsedArgs[2]);
-            char* val = kmem_alloc((SECTOR_SIZE * nblks), 0);
-            strncpy(val, parsedArgs[3], sizeof(parsedArgs[3]));
-            enqueue_umass_request(0 ,false, blkno, nblks, val, &write_complete);
+            // catch invalid arguments
+            if (parsedArgs[3] == NULL || parsedArgs[1] == NULL || parsedArgs[2] == NULL || parsedArgs[4] != NULL) {
+                printf("Invalid Args\n");
+                printf("Usage: write [blkno] [nblks] [text]\n");
+                reset_prompt();
+            } else {
+                int blkno = atoi(parsedArgs[1]);
+                int nblks = atoi(parsedArgs[2]);
+                char* val = kmem_alloc((SECTOR_SIZE * nblks), 0);
+                strncpy(val, parsedArgs[3], sizeof(parsedArgs[3]));
+                enqueue_umass_request(0 ,false, blkno, nblks, val, &write_complete);
+            }
         } else if (!strcmp(parsedArgs[0], "rw")) {
             char* val2 = kmem_alloc((SECTOR_SIZE * 1), 0);
             char* val = kmem_alloc((SECTOR_SIZE * 8), 0);
@@ -206,7 +226,7 @@ decode_command() {
         memset(cmd, '\0', sizeof(cmd));
         printf("\n");
     }
-    printf("seL4 test>>> ");
+    reset_prompt();
     cursor_index = 0;
 }
 
