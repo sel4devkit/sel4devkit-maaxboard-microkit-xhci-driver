@@ -8,15 +8,26 @@
 #include <sys/kmem.h>
 #include <xhci_api.h>
 
+// keycode defs
+#include <dev/wscons/wsksymdef.h>
+
 #define HEXDUMP(a, b, c) \
     do { \
 		hexdump(printf, a, b, c); \
     } while (/*CONSTCOND*/0)
 
-#include <dev/wscons/wsksymdef.h>
+// snake globals
+char* kbd_buffer;
 
-void init_mousetest();
+enum states {
+    CONSOLE,
+    SNAKE,
+    MOUSE_TEST,
+    KEYBOARD_TEST,
+    DISABLED
+};
 
+enum states console_state = CONSOLE;
 
 //rings for notifications
 uintptr_t rx_free;
@@ -25,6 +36,7 @@ uintptr_t mse_free;
 uintptr_t mse_used;
 uintptr_t umass_req_free;
 uintptr_t umass_req_used;
+char* keysDown[8];
 
 /* Pointers to shared_ringbuffers */
 ring_handle_t *kbd_buffer_ring;
@@ -36,6 +48,7 @@ ring_handle_t *umass_buffer_ring;
 #define CMD_LIMIT 1024
 #define ARGMAX 10
 char cmd[CMD_LIMIT];
+static bool kbd_no_press = false;
 
 //shell history globals
 #define CMD_HISTORY 1024
@@ -49,15 +62,13 @@ extern const keysym_t hidkbd_keydesc_us[];
 extern const keysym_t hidkbd_keydesc_uk[];
 #define CODEMASK 0x0ff
 #define KC(n)		KS_KEYCODE(n)
-bool kbd_enabled = false;
-bool mousetest = false;
+void init_mousetest();
 
 // heap(s)
 uintptr_t heap_base;
 uintptr_t other_heap_base;
 
 //heap specific globals
-char* kbd_mem_write;
 uintptr_t ta_limit;
 uint64_t heap_size = 0x2000000;
 int ta_blocks = 1024;
@@ -67,11 +78,13 @@ int ta_align = 64;
 // for pdprint
 char *pd_name = "shell";
 
-#define SECTOR_SIZE 512 //should get this from device information, hardcoded for now
+//! should get this from device information, hardcoded for now
+#define SECTOR_SIZE 512
 
 /* #define alloc(x) kmem_alloc(x, 0) */
 #define alloc(x) ta_alloc(x)
 
+// from apple open source library
 int
 atoi(const char *in)
 {
@@ -112,7 +125,7 @@ init_shell() {
     printf("                  VD                                         CP                  \n");
     printf("                                                                                 \n");
     printf("                                                                                 \n");
-    kbd_enabled = true;
+    console_state = CONSOLE;
     printf("\nseL4 test>>> ");
 }
 
@@ -154,11 +167,11 @@ decode_command() {
         if (!strcmp(parsedArgs[0], "init")) {
             init_shell();
         } else if (!strcmp(parsedArgs[0], "disable")) {
-            if (kbd_enabled) {
-                kbd_enabled = false;
+            if (console_state != DISABLED) {
+                console_state = DISABLED;
                 printf("keyboard disabled!!!\n");
             } else {
-                kbd_enabled = true;
+                console_state = CONSOLE;
                 printf("keyboard enabled!!!\n");
             }
         } else if (!strcmp(parsedArgs[0], "history")) {
@@ -168,7 +181,7 @@ decode_command() {
             }
         
         } else if (!strcmp(parsedArgs[0], "mousetest")) {
-            mousetest = true;
+            console_state = MOUSE_TEST;
             cmd_hist++;
             history[cmd_hist] = kmem_alloc(sizeof(cmd),0);
             strncpy(history[cmd_hist], cmd, sizeof(cmd));
@@ -196,6 +209,15 @@ decode_command() {
             enqueue_umass_request(0 ,false, 1, 8, val, &write_complete);
             printf("between\n");
             enqueue_umass_request(0 ,true, 1, 1, val2, &print_blocks);
+        } else if (!strcmp(parsedArgs[0], "kbdtest")) {
+            printf("\n");
+            console_state = KEYBOARD_TEST;
+            return;
+        } else if (!strcmp(parsedArgs[0], "snake")) {
+            *kbd_buffer = 'c';
+            printf("set kbd_buffer to %c %p\n", *kbd_buffer, kbd_buffer);
+            console_state = SNAKE;
+            microkit_notify(10);
         } else {
             printf("%s is not a recognised command!\n", parsedArgs[0]);
         }
@@ -295,9 +317,42 @@ handle_keypress()
 
     int index;
     while (!driver_dequeue(kbd_buffer_ring->used_ring, (uintptr_t*)&buffer, &len, &cookie)) {
-        uint8_t keyPressed = ((char *) buffer)[2];
+        //get unique keypress
+        uint8_t keyPressed;
+        int unique_id = -1;
+        int temp_unique_id = -1;
+        if (((char *) buffer)[2] != 0x1) {
+            for (int i = 2; i < 8; i++) {
+                if (((char*)buffer)[i] != 0x0) {
+                    for (int j = 2; j < 8; j++) {
+                        if (((char*)buffer)[i] == keysDown[j]) {
+                            temp_unique_id = -1;
+                            break;
+                        }
+                        temp_unique_id = i;
+                    }
+                    if (temp_unique_id != -1)
+                        unique_id = temp_unique_id;
+                }
+            }
+            keyPressed = ((char*)buffer)[unique_id];
+
+            //update previous buffer
+            keysDown[2] = ((char*)buffer)[2];
+            keysDown[3] = ((char*)buffer)[3];
+            keysDown[4] = ((char*)buffer)[4];
+            keysDown[5] = ((char*)buffer)[5];
+            keysDown[6] = ((char*)buffer)[6];
+            keysDown[7] = ((char*)buffer)[7];
+        } else {
+            //too many keys pressed
+            break;
+        }
+        // stop processing on all keys released
         if (keyPressed == 0)
             break;
+
+        // decode keycode from hex
         // first byte is 0x01 for Ctrl, 0x02 for Shft
         uint8_t shiftOrControl = ((char *) buffer)[0];
         int lowercaseAdd = shiftOrControl == 0 ? 1 : 0; // If shift or control held then want to add that value only
@@ -309,39 +364,55 @@ handle_keypress()
             }
         }
         keysym_t keypress = hidkbd_keydesc_us[index + lowercaseAdd + shiftOrControl];
-        if (!mousetest) {
-            switch(keypress) {
-                case KS_BackSpace:
-                    if (cursor_index > 0) {
-                        printf("%c %c", keypress, keypress);
-                        cursor_index--;
-                    }
+        switch (console_state) {
+            case SNAKE:
+                *kbd_buffer = keypress;
+                break;
+            case CONSOLE:
+                if (keyPressed == 0)
                     break;
-                case KS_Return:
-                    printf("\n");
-                    decode_command();
-                    break;
-                case KS_Up:
-                    scroll_hist(-1);
-                    break;
-                case KS_Down:
-                    scroll_hist(1);
-                    break;
-                default:
-                    if (cursor_index < CMD_LIMIT) {
-                        if ((keypress >= KS_a && keypress <= KS_z) || (keypress >= KS_A && keypress <= KS_Z) || (keypress >= KS_0 && keypress <= KS_9) || keypress == KS_space) {
-                            printf("%c", keypress);
-                            cmd[cursor_index] = keypress;
-                            cursor_index++;
+                switch(keypress) {
+                    case KS_BackSpace:
+                        if (cursor_index > 0) {
+                            printf("%c %c", keypress, keypress);
+                            cursor_index--;
                         }
-                    }
-            }
-        } else {
-            if (buffer[0] & 0x01 && keypress == KS_c) {
-                mousetest = false;
-                printf("\nEnd of mouse test\n");
-                clear_prompt();
-            }
+                        break;
+                    case KS_Return:
+                        printf("\n");
+                        decode_command();
+                        break;
+                    case KS_Up:
+                        scroll_hist(-1);
+                        break;
+                    case KS_Down:
+                        scroll_hist(1);
+                        break;
+                    default:
+                        if (cursor_index < CMD_LIMIT) {
+                            if ((keypress >= KS_a && keypress <= KS_z) || (keypress >= KS_A && keypress <= KS_Z) || (keypress >= KS_0 && keypress <= KS_9) || keypress == KS_space) {
+                                printf("%c", keypress);
+                                cmd[cursor_index] = keypress;
+                                cursor_index++;
+                            }
+                        }
+                }
+                break;
+            case MOUSE_TEST:
+                if (buffer[0] & 0x01 && keypress == KS_c) {
+                    console_state = CONSOLE;
+                    printf("\nEnd of mouse test\n");
+                    clear_prompt();
+                }
+            case KEYBOARD_TEST:
+                printf("0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n", ((char*)buffer)[0], ((char*)buffer)[1], ((char*)buffer)[2], ((char*)buffer)[3], ((char*)buffer)[4], ((char*)buffer)[5]);
+                printf("\r");
+                printf("\x1b[s"); /* save current cursor position */
+                printf("%*s", 30, ""); /* blank out virual screen */
+                printf("\x1b[u"); /* move cursor back to saved position */
+                break;
+            default:
+                print_fatal("Unrecognised keyboard state\n");
         }
         kmem_free(buffer, sizeof(buffer));
     }
@@ -373,17 +444,21 @@ notified(microkit_channel ch) {
             init_shell();
             break;
         case KEYBOARD_EVENT:
-            if (kbd_enabled)
+            if (console_state != DISABLED)
                 handle_keypress();
             break;
         case MOUSE_EVENT:
-            if (mousetest)
+            if (console_state == MOUSE_TEST)
                 handle_mouseTest();
             else
                 handle_mouseEvent();
             break;
         case UMASS_COMPLETE:
             handle_xfer_complete();
+            break;
+        case 10:
+            console_state = CONSOLE;
+            clear_prompt();
             break;
         default:
             print_warn("Unexpected channel %d\n", ch);

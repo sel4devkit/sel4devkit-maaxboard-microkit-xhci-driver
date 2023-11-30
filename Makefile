@@ -44,16 +44,20 @@ XHCI_STUB_OBJS 		:=  xhci_stub.o $(NETBSD_SRC) $(FDT_SRC) imx8mq_usbphy.o dwc3_f
 SOFTWARE_OBJS 		:=  software_interrupts.o $(NETBSD_SRC) $(FDT_SRC) imx8mq_usbphy.o dwc3_fdt.o $(UTILS) shared_ringbuffer.o
 HARDWARE_OBJS 		:=  hardware_interrupts.o sel4_bus_funcs.o $(UTILS)
 MEM_OBJS			:=  mem_handler.o tinyalloc.o printf.o util.o
-SHELL_OBJS 			:=  shell.o hidkbdmap.o shared_ringbuffer.o printf.o tinyalloc.o util.o xhci_api.o hexdump.o
+SHELL_OBJS 			:=  shell.o hidkbdmap.o shared_ringbuffer.o printf.o tinyalloc.o xhci_api.o hexdump.o
+SNAKE_OBJS 			:=  snake.o
 SIMULATED_KBD_OBJS	:=  simulated_kbd.o printf.o tinyalloc.o
 
 BOARD_DIR := $(MICROKIT_SDK)/board/$(MICROKIT_BOARD)/$(MICROKIT_CONFIG)
 
-IMAGES := xhci_stub.elf hardware.elf software.elf mem_handler.elf shell.elf simulated_kbd.elf
+IMAGES := xhci_stub.elf hardware.elf software.elf mem_handler.elf shell.elf simulated_kbd.elf snake.elf
 INC := $(BOARD_DIR)/include include/api include/tinyalloc include/wrapper $(NETBSD_DIR)/sys $(NETBSD_DIR)/sys/external/bsd/libfdt/dist $(NETBSD_DIR)/mach_include include/bus include/dma include/printf include/timer src/
 INC_PARAMS=$(foreach d, $(INC), -I$d)
+INC_NO_BSD := $(BOARD_DIR)/include include/api include/tinyalloc include/wrapper include/bus include/dma include/printf include/timer src/
+INC_NO_BSD_PARAMS=$(foreach d, $(INC_NO_BSD), -I$d)
 WARNINGS := -Wall -Wno-comment -Wno-return-type -Wno-unused-function -Wno-unused-value -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-pointer-sign
-CFLAGS := -mcpu=$(CPU) -mstrict-align -ffreestanding -g3 -O3 $(WARNINGS) $(INC_PARAMS) -I$(BOARD_DIR)/include -DSEL4 #-DSEL4_USB_DEBUG
+CFLAGS := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 $(WARNINGS) $(INC_PARAMS) -I$(BOARD_DIR)/include --specs=picolibc.specs -DSEL4 #-DSEL4_USB_DEBUG
+CFLAGS_NO_BSD := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 $(WARNINGS) $(INC_NO_BSD_PARAMS) -I$(BOARD_DIR)/include --specs=picolibc.specs -DSEL4 #-DSEL4_USB_DEBUG
 LDFLAGS := -L$(BOARD_DIR)/lib
 LIBS := -lmicrokit -Tmicrokit.ld
 
@@ -85,6 +89,9 @@ $(BUILD_DIR)/%.o: include/api/%.c Makefile
 
 $(BUILD_DIR)/%.o: cap/%.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/%.o: games/%.c Makefile
+	$(CC) -c $(CFLAGS_NO_BSD) $< -o $@
 
 $(BUILD_DIR)/usb.o: $(NETBSD_DIR)/sys/dev/usb/usb.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
@@ -252,7 +259,10 @@ $(BUILD_DIR)/hardware.elf: $(addprefix $(BUILD_DIR)/, $(HARDWARE_OBJS))
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 
 $(BUILD_DIR)/shell.elf: $(addprefix $(BUILD_DIR)/, $(SHELL_OBJS))
-	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
+	$(LD) $(LDFLAGS) $^ libc.a libm.a $(LIBS) -o $@
+
+$(BUILD_DIR)/snake.elf: $(addprefix $(BUILD_DIR)/, $(SNAKE_OBJS))
+	$(LD) $(LDFLAGS) $^ libc.a libm.a $(LIBS) -o $@
 
 $(BUILD_DIR)/simulated_kbd.elf: $(addprefix $(BUILD_DIR)/, $(SIMULATED_KBD_OBJS))
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
