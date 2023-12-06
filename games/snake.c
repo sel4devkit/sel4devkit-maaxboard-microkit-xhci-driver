@@ -31,22 +31,6 @@
 
 char* kbd_buffer;
 
-void
-init(void) {
-}
-
-void
-notified(microkit_channel ch) {
-    switch(ch) {
-        case 10:
-            main_snake();
-			microkit_notify(10);
-			break;
-		default:
-			printf("snake unexpected\n");
-	}
-}
-
 /* Setup for getting printf functionality working */
 static int
 libc_microkit_putc(char c, FILE *file)
@@ -600,4 +584,20 @@ int main_snake(void) {
 
 	move_cursor(SCREEN_HEIGHT + 5 + (timer >= 0), 0); /* move to default, screen_height + borders + spaces for score, etc. */
 	return 0;
+}
+
+void
+init(void) {
+}
+
+void
+notified(microkit_channel ch) {
+    switch(ch) {
+        case 10:
+            main_snake();
+			microkit_notify(10);
+			break;
+		default:
+			printf("snake unexpected\n");
+	}
 }

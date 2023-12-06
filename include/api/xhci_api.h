@@ -2,17 +2,18 @@
 #include <stdbool.h>
 
 //USB definitions
-#define USB_SPEED_LOW  1
-#define USB_SPEED_FULL 2
-#define USB_SPEED_HIGH 3
-#define USB_SPEED_SUPER 4
-#define USB_SPEED_SUPER_PLUS 5
+#define USB_SPEED_LOW           1
+#define USB_SPEED_FULL          2
+#define USB_SPEED_HIGH          3
+#define USB_SPEED_SUPER         4
+#define USB_SPEED_SUPER_PLUS    5
 
-#define INIT             44
-#define KEYBOARD_EVENT   45
-#define MOUSE_EVENT      46
-#define UMASS_COMPLETE   48
-#define NEW_DEVICE_EVENT 50
+#define INIT                    44
+#define KEYBOARD_EVENT          45
+#define MOUSE_EVENT             46
+#define UMASS_COMPLETE          48
+#define TOUCHSCREEN_EVENT       49
+#define NEW_DEVICE_EVENT        50
 
 #define MAX_DEVICES 127
 
@@ -30,12 +31,34 @@ struct umass_request{
     int xfer_id; // xfer id
 };
 
+struct usb_new_device{
+    int id; // device id
+    char* vendor;
+    char* product;
+    int vendorid;
+    int productid;
+    int class;
+    int speed;
+};
 
-
+/**
+ * Initialises required rings for mass storage part of api
+*/
 void umass_api_init();
+
+/**
+ * Handles callback from complete API
+*/
 void handle_xfer_complete();
 
 /**
+ * Handles new device connection
+*/
+void handle_new_device();
+
+/**
+ * Enqueues new request to device
+ * 
  * @param dev_id id of device to request
  * @param read true for read, false for write
  * @param blkno starting block number for request
@@ -48,15 +71,16 @@ void handle_xfer_complete();
 */
 int enqueue_umass_request(int dev_id, bool read, int blkno, int nblks, void* val, void* cb);
 
-struct usb_new_device{
-    int id; // device id
-    char* vendor;
-    char* product;
-    int vendorid;
-    int productid;
-    int class;
-    int speed;
-};
+/**
+ * Prints device info to debug
+ * 
+ * @param dev_id id of device to print
+ * 
+ * @return none
+*/
+void print_device(int dev_id);
 
-void print_device(int);
+/**
+ * Print all devices to debug
+*/
 void print_devs();

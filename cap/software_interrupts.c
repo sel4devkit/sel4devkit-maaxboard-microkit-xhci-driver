@@ -41,22 +41,17 @@ uintptr_t xhci_base;
 uintptr_t dma_base;
 uintptr_t ring_base;
 uintptr_t heap_base;
-uintptr_t dma_cp_vaddr = 0x54000000;
 uintptr_t dma_cp_paddr;
-uintptr_t ring_cp_vaddr = 0x60000000;
-uintptr_t ring_cp_paddr;
 uintptr_t timer_base;
 uint64_t heap_size = 0x2000000;
-uintptr_t hw_ring_buffer_vaddr;
-uintptr_t hw_ring_buffer_paddr;
-uintptr_t rx_cookies;
-uintptr_t tx_cookies;
-uintptr_t rx_free;
-uintptr_t rx_used;
+
+//API shared mem
+uintptr_t kbd_free;
+uintptr_t kbd_used;
 uintptr_t mse_free;
 uintptr_t mse_used;
-uintptr_t tx_free;
-uintptr_t tx_used;
+uintptr_t uts_free;
+uintptr_t uts_used;
 uintptr_t umass_req_free; // unused
 uintptr_t umass_req_used; // unused
 uintptr_t usb_new_device_free; // unused
@@ -83,6 +78,7 @@ int cold = 1;
 /* Pointers to shared_ringbuffers */
 ring_handle_t *kbd_buffer_ring;
 ring_handle_t *mse_buffer_ring;
+ring_handle_t *uts_buffer_ring;
 ring_handle_t *umass_buffer_ring; // unused
 ring_handle_t *usb_new_device_ring; // unused
 
@@ -98,13 +94,15 @@ init(void) {
     umass_bbb_methods_pointer = get_umass_bbb_methods();
     device_bulk_pointer = get_device_bulk_methods();
     pipe_thread = false;
-    sel4_dma_init(dma_cp_paddr, dma_cp_vaddr, dma_cp_vaddr + 0x200000);
+    sel4_dma_init(dma_cp_paddr, dma_base, dma_base + 0x200000);
     initialise_and_start_timer(timer_base);
 
     kbd_buffer_ring = kmem_alloc(sizeof(*kbd_buffer_ring), 0);
-    ring_init(kbd_buffer_ring, (ring_buffer_t *)rx_free, (ring_buffer_t *)rx_used, NULL, 0);
+    ring_init(kbd_buffer_ring, (ring_buffer_t *)kbd_free, (ring_buffer_t *)kbd_used, NULL, 0);
     mse_buffer_ring = kmem_alloc(sizeof(*mse_buffer_ring), 0);
     ring_init(mse_buffer_ring, (ring_buffer_t *)mse_free, (ring_buffer_t *)mse_used, NULL, 0);
+    uts_buffer_ring = kmem_alloc(sizeof(*uts_buffer_ring), 0);
+    ring_init(uts_buffer_ring, (ring_buffer_t *)uts_free, (ring_buffer_t *)uts_used, NULL, 0);
     print_info("Initialised\n");
 }
 

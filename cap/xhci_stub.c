@@ -35,6 +35,7 @@
 
 #include <lib/libkern/libkern.h>
 #include <dev/fdt/fdtvar.h>
+
 #define BUS_DEBUG 0
 #define __AARCH64__
 
@@ -53,12 +54,14 @@ uintptr_t device_bulk_pointer;
 uintptr_t device_bulk_pointer_other;
 uintptr_t umass_bbb_methods_pointer;
 uintptr_t umass_bbb_methods_pointer_other;
-uintptr_t rx_free;
-uintptr_t rx_used;
+
+//API shared data
+uintptr_t kbd_free;
+uintptr_t kbd_used;
 uintptr_t mse_free;
 uintptr_t mse_used;
-uintptr_t tx_free;
-uintptr_t tx_used;
+uintptr_t uts_free;
+uintptr_t uts_used;
 uintptr_t umass_req_free;
 uintptr_t umass_req_used;
 uintptr_t usb_new_device_free;
@@ -68,36 +71,22 @@ struct intr_ptrs_holder *intr_ptrs;
 bool pipe_thread;
 int cold = 1;
 
-struct imx8mq_usbphy_softc {
-	device_t		sc_dev;
-	bus_space_tag_t		sc_bst;
-	bus_space_handle_t	sc_bsh;
-	int			sc_phandle;
-};
-
 char *pd_name = "xhci_stub";
 
 // definitions from .system file
 uintptr_t xhci_base;
 uintptr_t xhci_phy_base;
 uintptr_t heap_base;
-uint64_t heap_size = 0x2000000;
-int ta_blocks = 256;
-int ta_thresh = 16;
-int ta_align = 64;
-uintptr_t pipe_heap_base;
 uintptr_t dma_base;
 uintptr_t dma_cp_paddr;
-uintptr_t dma_cp_vaddr = 0x54000000;
-uintptr_t ta_limit;
 uintptr_t timer_base;
-uintptr_t software_heap;
 
 struct usb_softc *usb_sc, *usb_sc2;
 
 /* Pointers to shared_ringbuffers */
 ring_handle_t *kbd_buffer_ring;
 ring_handle_t *mse_buffer_ring;
+ring_handle_t *uts_buffer_ring;
 ring_handle_t *umass_buffer_ring;
 ring_handle_t *usb_new_device_ring;
 
@@ -110,7 +99,6 @@ init(void) {
     }
 
     // init
-    printf("XHCI_STUB: dmapaddr = %p\n", dma_cp_paddr);
     xhci_bus_methods_ptr = (struct usbd_bus_methods *) get_bus_methods();
     xhci_root_intr_pointer = (uintptr_t) get_root_intr_methods();
     device_ctrl_pointer = (uintptr_t) get_device_methods();
@@ -138,7 +126,7 @@ init(void) {
     //initialise autoconf data structures
     config_init(); 
     initialise_and_start_timer(timer_base);
-    sel4_dma_init(dma_cp_paddr, dma_cp_vaddr, dma_cp_vaddr + 0x200000);
+    sel4_dma_init(dma_cp_paddr, dma_base, dma_base + 0x200000);
 
     pipe_thread = false;
     cold = 0;
@@ -166,7 +154,7 @@ init(void) {
             fdtbus_get_reg(fdtbus_offset2phandle(offset), 0, &addr, &size);
             if (addr == xhci_base) {
                 dwc3_phandle = fdtbus_offset2phandle(offset);
-                print_debug("offset: %d\n", offset); // DEBUG: plug this into the offset value to speed up initialisation
+                print_debug("offset: 0x%x\n", offset); // DEBUG: plug this into the offset value to speed up initialisation
                 break;
             } else if (offset < 0) {
                 if (offset == -FDT_ERR_NOTFOUND) {
@@ -184,6 +172,7 @@ init(void) {
     // setup api rings
     kbd_buffer_ring = kmem_alloc(sizeof(*kbd_buffer_ring), 0);
     mse_buffer_ring = kmem_alloc(sizeof(*mse_buffer_ring), 0);
+    uts_buffer_ring = kmem_alloc(sizeof(*uts_buffer_ring), 0);
 
     /* Set up shared memory regions */
     usb_new_device_ring = kmem_alloc(sizeof(*usb_new_device_ring), 0);

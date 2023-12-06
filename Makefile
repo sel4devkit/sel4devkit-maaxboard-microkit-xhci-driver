@@ -90,6 +90,9 @@ $(BUILD_DIR)/%.o: include/api/%.c Makefile
 $(BUILD_DIR)/%.o: cap/%.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
+$(BUILD_DIR)/%.o: shell/%.c Makefile
+	$(CC) -c $(CFLAGS) -Ishell/ $< -o $@
+
 $(BUILD_DIR)/%.o: games/%.c Makefile
 	$(CC) -c $(CFLAGS_NO_BSD) $< -o $@
 
@@ -241,7 +244,6 @@ $(BUILD_DIR)/imx8mq_usbphy.o: $(NETBSD_DIR)/sys/arch/arm/nxp/imx8mq_usbphy.c Mak
 
 $(BUILD_DIR)/tpcalib.o: $(NETBSD_DIR)/sys/dev/wscons/tpcalib.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
-
 	
 $(BUILD_DIR)/%.o: %.s Makefile
 	$(AS) -g3 -mcpu=$(CPU) $< -o $@
@@ -259,10 +261,10 @@ $(BUILD_DIR)/hardware.elf: $(addprefix $(BUILD_DIR)/, $(HARDWARE_OBJS))
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 
 $(BUILD_DIR)/shell.elf: $(addprefix $(BUILD_DIR)/, $(SHELL_OBJS))
-	$(LD) $(LDFLAGS) $^ libc.a libm.a $(LIBS) -o $@
+	$(LD) $(LDFLAGS) $^ libc.a libg.a libm.a $(LIBS) -o $@
 
 $(BUILD_DIR)/snake.elf: $(addprefix $(BUILD_DIR)/, $(SNAKE_OBJS))
-	$(LD) $(LDFLAGS) $^ libc.a libm.a $(LIBS) -o $@
+	$(LD) $(LDFLAGS) $^ libc.a $(LIBS) -o $@
 
 $(BUILD_DIR)/simulated_kbd.elf: $(addprefix $(BUILD_DIR)/, $(SIMULATED_KBD_OBJS))
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
