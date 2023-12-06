@@ -102,29 +102,36 @@ atoi(const char *in)
 }
 
 
+#define ANSI_RED		"\x1b[1;31m"
+#define ANSI_GREEN		"\x1b[1;32m"
+#define ANSI_YELLOW		"\x1b[1;33m"
+#define ANSI_BLUE		"\x1b[1;34m"
+#define ANSI_WHITE		"\x1b[1;37m"
+#define ANSI_CLEAR		"\x1b[0m"
+
 void
 init_shell() {
     umass_api_init();
 
-    printf("                                                                                 \n");
-    printf("                                                                                 \n");
-    printf("    .d8888. d88888b db        j88D    .d8888. db   db d88888b db      db         \n");
-    printf("    88'  YP 88'     88       j8~88    88'  YP 88   88 88'     88      88         \n");
-    printf("    `8bo.   88ooooo 88      j8' 88    `8bo.   88ooo88 88ooooo 88      88         \n");
-    printf("      `Y8b. 88~~~~~ 88      V88888D     `Y8b. 88~~~88 88~~~~~ 88      88         \n");
-    printf("    db   8D 88.     88booo.     88    db   8D 88   88 88.     88booo. 88booo.    \n");
-    printf("    `8888Y' Y88888P Y88888P     VP    `8888Y' YP   YP Y88888P Y88888P Y88888P    \n");
-    printf("                                                                                 \n");
-    printf("                                                                                 \n");
-    printf("                  dD  .d8b.  db      d8888b. db   db  .d8b.  Cb                  \n");
-    printf("                d8'  d8' `8b 88      88  `8D 88   88 d8' `8b  `8b                \n");
-    printf("               d8    88ooo88 88      88oodD' 88ooo88 88ooo88    8b               \n");
-    printf("              C88    88~~~88 88      88~~~   88~~~88 88~~~88    88D              \n");
-    printf("               V8    88   88 88booo. 88      88   88 88   88    8P               \n");
-    printf("                V8.  YP   YP Y88888P 88      YP   YP YP   YP  .8P                \n");
-    printf("                  VD                                         CP                  \n");
-    printf("                                                                                 \n");
-    printf("                                                                                 \n");
+    printf("                                                                    \n");
+    printf("                                                                    \n");
+    printf("        "ANSI_RED"  .d8888. "ANSI_CLEAR" db   db "ANSI_RED" d88888b "ANSI_CLEAR" db      "ANSI_RED" db        j88D "ANSI_CLEAR"           \n");
+    printf("        "ANSI_RED"  88'  YP "ANSI_CLEAR" 88   88 "ANSI_RED" 88'     "ANSI_CLEAR" 88      "ANSI_RED" 88       j8~88 "ANSI_CLEAR"           \n");
+    printf("        "ANSI_RED"  `8bo.   "ANSI_CLEAR" 88ooo88 "ANSI_RED" 88ooooo "ANSI_CLEAR" 88      "ANSI_RED" 88      j8' 88 "ANSI_CLEAR"           \n");
+    printf("        "ANSI_RED"    `Y8b. "ANSI_CLEAR" 88~~~88 "ANSI_RED" 88~~~~~ "ANSI_CLEAR" 88      "ANSI_RED" 88      V88888D"ANSI_CLEAR"           \n");
+    printf("        "ANSI_RED"  db   8D "ANSI_CLEAR" 88   88 "ANSI_RED" 88.     "ANSI_CLEAR" 88booo. "ANSI_RED" 88booo.     88 "ANSI_CLEAR"           \n");
+    printf("        "ANSI_RED"  `8888Y' "ANSI_CLEAR" YP   YP "ANSI_RED" Y88888P "ANSI_CLEAR" Y88888P "ANSI_RED" Y88888P     VP "ANSI_CLEAR"           \n");
+    printf("                                                                    \n");
+    printf("                                                                    \n");
+    printf("            dD  .d8b.  db      d8888b. db   db  .d8b.  Cb           \n");
+    printf("          d8'  d8' `8b 88      88  `8D 88   88 d8' `8b  `8b         \n");
+    printf("         d8    88ooo88 88      88oodD' 88ooo88 88ooo88    8b        \n");
+    printf("        C88    88~~~88 88      88~~~   88~~~88 88~~~88    88D       \n");
+    printf("         V8    88   88 88booo. 88      88   88 88   88    8P        \n");
+    printf("          V8.  YP   YP Y88888P 88      YP   YP YP   YP  .8P         \n");
+    printf("           VD                                         CP            \n");
+    printf("                                                                    \n");
+    printf("                                                                    \n");
     console_state = CONSOLE;
     printf("\nseL4 test>>> ");
 }
@@ -148,11 +155,13 @@ void reset_prompt() {
     printf("\nseL4 test>>> ");
 }
 
+//callback for read
 void print_blocks(struct umass_request *xfer) {
     HEXDUMP("read", xfer->val, (SECTOR_SIZE * xfer->nblks));
     reset_prompt();
 }
 
+//callback for write
 void write_complete(struct umass_request *xfer) {
     printf("\nWrite complete\n");
     reset_prompt();
