@@ -111,7 +111,6 @@ atoi(const char *in)
 
 void
 init_shell() {
-    umass_api_init();
 
     printf("                                                                    \n");
     printf("                                                                    \n");
@@ -231,13 +230,6 @@ decode_command() {
                 strncpy(val, parsedArgs[3], sizeof(parsedArgs[3]));
                 enqueue_umass_request(0 ,false, blkno, nblks, val, &write_complete);
             }
-        } else if (!strcmp(parsedArgs[0], "rw")) {
-            char* val2 = kmem_alloc((SECTOR_SIZE * 1), 0);
-            char* val = kmem_alloc((SECTOR_SIZE * 8), 0);
-            strncpy(val, parsedArgs[1], sizeof(parsedArgs[1]));
-            enqueue_umass_request(0 ,false, 1, 8, val, &write_complete);
-            printf("between\n");
-            enqueue_umass_request(0 ,true, 1, 1, val2, &print_blocks);
         } else if (!strcmp(parsedArgs[0], "kbdtest")) {
             printf("\n");
             console_state = KEYBOARD_TEST;
@@ -247,6 +239,10 @@ decode_command() {
             printf("set kbd_buffer to %c %p\n", *kbd_buffer, kbd_buffer);
             console_state = SNAKE;
             microkit_notify(10);
+        } else if (!strcmp(parsedArgs[0], "getdev")) {
+            print_device(atoi(parsedArgs[1]));
+        } else if (!strcmp(parsedArgs[0], "lsdev")) {
+            print_devs();
         } else {
             printf("%s is not a recognised command!\n", parsedArgs[0]);
         }
@@ -461,6 +457,7 @@ init(void) {
     ring_init(mse_buffer_ring, (ring_buffer_t *)mse_free, (ring_buffer_t *)mse_used, NULL, 0);
     umass_buffer_ring = alloc(sizeof(*umass_buffer_ring));
     ring_init(umass_buffer_ring, (ring_buffer_t *)umass_req_free, (ring_buffer_t *)umass_req_used, NULL, 0);
+    umass_api_init();
     print_info("Initialised\n");
 }
 
@@ -488,6 +485,8 @@ notified(microkit_channel ch) {
         case 10:
             console_state = CONSOLE;
             clear_prompt();
+        case NEW_DEVICE_EVENT:
+            handle_new_device();
             break;
         default:
             print_warn("Unexpected channel %d\n", ch);

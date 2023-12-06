@@ -59,6 +59,8 @@ uintptr_t tx_free;
 uintptr_t tx_used;
 uintptr_t umass_req_free; // unused
 uintptr_t umass_req_used; // unused
+uintptr_t usb_new_device_free; // unused
+uintptr_t usb_new_device_used; // unused
 
 bool pipe_thread;
 
@@ -82,6 +84,7 @@ int cold = 1;
 ring_handle_t *kbd_buffer_ring;
 ring_handle_t *mse_buffer_ring;
 ring_handle_t *umass_buffer_ring; // unused
+ring_handle_t *usb_new_device_ring; // unused
 
 void
 init(void) {

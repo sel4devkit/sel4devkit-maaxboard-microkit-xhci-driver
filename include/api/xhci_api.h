@@ -1,10 +1,20 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#define INIT            44
-#define KEYBOARD_EVENT  45
-#define MOUSE_EVENT     46
-#define UMASS_COMPLETE  48
+//USB definitions
+#define USB_SPEED_LOW  1
+#define USB_SPEED_FULL 2
+#define USB_SPEED_HIGH 3
+#define USB_SPEED_SUPER 4
+#define USB_SPEED_SUPER_PLUS 5
+
+#define INIT             44
+#define KEYBOARD_EVENT   45
+#define MOUSE_EVENT      46
+#define UMASS_COMPLETE   48
+#define NEW_DEVICE_EVENT 50
+
+#define MAX_DEVICES 127
 
 struct umass_request;
 
@@ -37,3 +47,16 @@ void handle_xfer_complete();
  * @return transaction id on success, -1 on failure
 */
 int enqueue_umass_request(int dev_id, bool read, int blkno, int nblks, void* val, void* cb);
+
+struct usb_new_device{
+    int id; // device id
+    char* vendor;
+    char* product;
+    int vendorid;
+    int productid;
+    int class;
+    int speed;
+};
+
+void print_device(int);
+void print_devs();

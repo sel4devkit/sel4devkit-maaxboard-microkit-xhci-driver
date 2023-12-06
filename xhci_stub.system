@@ -26,6 +26,8 @@
     <memory_region name="umass_req_used" size="0x200_000" page_size="0x200_000"/>
     <memory_region name="mse_free" size="0x200_000" page_size="0x200_000"/>
     <memory_region name="mse_used" size="0x200_000" page_size="0x200_000"/>
+    <memory_region name="usb_new_device_free" size="0x200_000" page_size="0x200_000"/>
+    <memory_region name="usb_new_device_used" size="0x200_000" page_size="0x200_000"/>
 
     <memory_region name="tx_free" size="0x200_000" page_size="0x200_000"/>
     <memory_region name="tx_used" size="0x200_000" page_size="0x200_000"/>
@@ -49,6 +51,8 @@
         <map mr="mse_used" vaddr="0x4_a00_000" perms="rw" cached="true" setvar_vaddr="mse_used" />
         <map mr="umass_req_free" vaddr="0x4_c00_000" perms="rw" cached="true" setvar_vaddr="umass_req_free" />
         <map mr="umass_req_used" vaddr="0x4_e00_000" perms="rw" cached="true" setvar_vaddr="umass_req_used" />
+        <map mr="usb_new_device_free" vaddr="0x5_000_000" perms="rw" cached="true" setvar_vaddr="usb_new_device_free" />
+        <map mr="usb_new_device_used" vaddr="0x5_200_000" perms="rw" cached="true" setvar_vaddr="usb_new_device_used" />
         <program_image path="xhci_stub.elf" />
 
         <setvar symbol="dma_cp_paddr" region_paddr="dma_pool" />
@@ -108,7 +112,9 @@
         <map mr="mse_used" vaddr="0x4_a00_000" perms="rw" cached="true" setvar_vaddr="mse_used" />
         <map mr="umass_req_free" vaddr="0x4_c00_000" perms="rw" cached="true" setvar_vaddr="umass_req_free" />
         <map mr="umass_req_used" vaddr="0x4_e00_000" perms="rw" cached="true" setvar_vaddr="umass_req_used" />
-        
+        <map mr="usb_new_device_free" vaddr="0x5_000_000" perms="rw" cached="true" setvar_vaddr="usb_new_device_free" />
+        <map mr="usb_new_device_used" vaddr="0x5_200_000" perms="rw" cached="true" setvar_vaddr="usb_new_device_used" />
+
         <program_image path="shell.elf" />
     </protection_domain>
 
@@ -240,10 +246,13 @@
         <end pd="software_interrupt" id="48"/>
         <end pd="shell" id="48"/>
     </channel>
-
     <channel>
         <!-- Umass xfer complete -->
         <end pd="shell" id="10"/>
         <end pd="snake" id="10"/>
+    <channel>
+        <!-- USB Device Connect Event -->
+        <end pd="xhci_stub" id="50"/>
+        <end pd="shell" id="50"/>
     </channel>
 </system>

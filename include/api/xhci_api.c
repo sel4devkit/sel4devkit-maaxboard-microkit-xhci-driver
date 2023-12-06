@@ -14,6 +14,13 @@ static int current_xfer = -1;
 static bool locked = false;
 struct umass_request *active_xfer;
 
+ring_handle_t *usb_new_device_ring;
+uintptr_t usb_new_device_free;
+uintptr_t usb_new_device_used;
+
+int dev_id;
+struct usb_new_device* usb_devices[MAX_DEVICES];
+
 int execute_next();
 
 /**
@@ -24,6 +31,10 @@ void umass_api_init() {
     umass_free = (uintptr_t) kmem_alloc(0x200000, 0);
     umass_used = (uintptr_t) kmem_alloc(0x200000, 0);
     ring_init(api_request_ring, (ring_buffer_t *)umass_free, (ring_buffer_t *)umass_used, NULL, 1);
+    // New deivce event ring
+    usb_new_device_ring = kmem_alloc(sizeof(*usb_new_device_ring), 0);
+    ring_init(usb_new_device_ring, (ring_buffer_t *)usb_new_device_free, (ring_buffer_t *)usb_new_device_used, NULL, 0);
+    dev_id = 0;
 }
 
 
@@ -90,5 +101,80 @@ void handle_xfer_complete()
     // if ring is not empty, do next xfer
     if (!ring_empty(api_request_ring)) {
         execute_next();
+    }
+}
+
+void
+handle_new_device() {
+    uintptr_t *buffer = 0;
+    unsigned int len = 0;
+    void *cookie = NULL;
+
+    int index;
+    while (!driver_dequeue(usb_new_device_ring->used_ring, (uintptr_t*)&buffer, &len, &cookie)) {
+        struct usb_new_device* dev = (struct usb_new_device*)buffer; 
+        dev->id = dev_id++;
+        usb_devices[dev->id] = dev; 
+        //print_device(dev->id);
+    }
+}
+
+char* get_class(int class) {
+    switch(class) {
+        case 0: 
+            return "Device";
+        case 1: 
+            return "audio";
+        case 2: 
+            return "CDC";
+        case 3: 
+            return "HID";
+        case 5: 
+            return "Physical";
+        case 6: 
+            return "Image";
+        case 7: 
+            return "Printer";
+        case 8: 
+            return "Mass storage";
+        case 9: 
+            return "Hub";
+        default:
+            return "None";
+    }
+}
+
+char* get_speed(int speed) {
+    switch(speed) {
+        case USB_SPEED_LOW: 
+            return "LOW";
+        case USB_SPEED_FULL: 
+            return "FULL";
+        case USB_SPEED_HIGH: 
+            return "HIGH";
+        case USB_SPEED_SUPER: 
+            return "SUPER";
+        case USB_SPEED_SUPER_PLUS: 
+            return "SUPER PLUS";
+        default:
+            return "ERROR";
+    }
+}
+
+void print_device(int id)
+{
+    struct usb_new_device *dev = usb_devices[id];
+    printf("USB device:\n");
+    printf("    ID: %i\n", dev->id);
+    printf("    Vendor: %s (0x%04x)\n", dev->vendor, dev->vendorid);
+    printf("    Product: %s (0x%04x)\n", dev->product, dev->productid);
+    printf("    Class: %s\n", get_class(dev->class));
+    printf("    Speed: %s\n", get_speed(dev->speed));
+}
+
+void print_devs()
+{
+    for (int i = 0; i < dev_id; i++) {
+        print_device(i);
     }
 }

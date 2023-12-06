@@ -61,6 +61,8 @@ uintptr_t tx_free;
 uintptr_t tx_used;
 uintptr_t umass_req_free;
 uintptr_t umass_req_used;
+uintptr_t usb_new_device_free;
+uintptr_t usb_new_device_used;
 
 struct intr_ptrs_holder *intr_ptrs;
 bool pipe_thread;
@@ -97,6 +99,7 @@ struct usb_softc *usb_sc, *usb_sc2;
 ring_handle_t *kbd_buffer_ring;
 ring_handle_t *mse_buffer_ring;
 ring_handle_t *umass_buffer_ring;
+ring_handle_t *usb_new_device_ring;
 
 void
 init(void) {
@@ -182,6 +185,10 @@ init(void) {
     kbd_buffer_ring = kmem_alloc(sizeof(*kbd_buffer_ring), 0);
     mse_buffer_ring = kmem_alloc(sizeof(*mse_buffer_ring), 0);
 
+    /* Set up shared memory regions */
+    usb_new_device_ring = kmem_alloc(sizeof(*usb_new_device_ring), 0);
+    ring_init(usb_new_device_ring, (ring_buffer_t *)usb_new_device_free, (ring_buffer_t *)usb_new_device_used, NULL, 1);
+
     // setup xhci devices + tell software PD memory locations
     device_t parent_xhci = NULL;
 
@@ -227,8 +234,8 @@ init(void) {
 
     // setup complete, busses will still need to be explored for devices to function
     print_info("Initialised\n");
-    usb_discover(usb_sc);
     usb_discover(usb_sc2);
+    usb_discover(usb_sc);
 	microkit_notify(42); //notify client xhci is up and running
 }
 
@@ -253,6 +260,12 @@ void handle_umass_xfer()
     // TODO: xfer complete
 }
 
+void handle_usb_new_device()
+{
+    // TODO
+    printf("new device");
+}
+
 
 void
 notified(microkit_channel ch)
@@ -260,19 +273,23 @@ notified(microkit_channel ch)
     switch (ch) {
         case 17: // hotplug
             // do a discover
-            if (usb_sc->sc_bus->ub_needsexplore) {
-                print_debug("Discover on USB3...\n");
+            if (usb_sc->sc_bus->ub_needsexplore || usb_sc2->sc_bus->ub_needsexplore) {
+                printf("Discover on USB3...\n");
                 usb_discover(usb_sc);
-                print_debug("USB3 discover finished\n");
-            }
-            if (usb_sc2->sc_bus->ub_needsexplore) {
-                print_debug("Discover on USB2...\n");
                 usb_discover(usb_sc2);
-                print_debug("USB2 discover finished\n");
+                printf("USB3 discover finished\n");
             }
+            // if (usb_sc2->sc_bus->ub_needsexplore) {
+            //     print_debug("Discover on USB2...\n");
+            //     usb_discover(usb_sc2);
+            //     print_debug("USB2 discover finished\n");
+            // }
             break;
         case 47:
             handle_umass_xfer();
+            break;
+        case 50:
+            handle_usb_new_device();
             break;
         default:
             print_warn("xhci_stub received notification unexpected channel\n");
