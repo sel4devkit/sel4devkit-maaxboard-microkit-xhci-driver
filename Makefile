@@ -56,7 +56,7 @@ INC_PARAMS=$(foreach d, $(INC), -I$d)
 INC_NO_BSD := $(BOARD_DIR)/include include/api include/tinyalloc include/wrapper include/bus include/dma include/printf include/timer src/
 INC_NO_BSD_PARAMS=$(foreach d, $(INC_NO_BSD), -I$d)
 WARNINGS := -Wall -Wno-comment -Wno-return-type -Wno-unused-function -Wno-unused-value -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-pointer-sign
-CFLAGS := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 $(WARNINGS) $(INC_PARAMS) -I$(BOARD_DIR)/include --specs=picolibc.specs -DSEL4 #-DSEL4_USB_DEBUG
+CFLAGS := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 $(WARNINGS) $(INC_PARAMS) -I$(BOARD_DIR)/include -DSEL4 #-DSEL4_USB_DEBUG
 CFLAGS_NO_BSD := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 $(WARNINGS) $(INC_NO_BSD_PARAMS) -I$(BOARD_DIR)/include --specs=picolibc.specs -DSEL4 #-DSEL4_USB_DEBUG
 LDFLAGS := -L$(BOARD_DIR)/lib
 LIBS := -lmicrokit -Tmicrokit.ld

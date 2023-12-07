@@ -1,27 +1,39 @@
 /* This work is Crown Copyright NCSC, 2023. */
 #include <microkit.h>
+#include <printf.h>
 #include <shared_ringbuffer.h>
+#include <tinyalloc.h>
 #include <lib/libkern/libkern.h>
+#include <pdprint.h>
 #include <sys/kmem.h>
 #include <xhci_api.h>
-#include <tinyalloc.h>
-#include <shell.h>
-#include <printf.h>
-#include <pdprint.h>
 
 // keycode defs
 #include <dev/wscons/wsksymdef.h>
 
+#define HEXDUMP(a, b, c) \
+    do { \
+		hexdump(printf, a, b, c); \
+    } while (/*CONSTCOND*/0)
+
 // snake globals
 char* kbd_buffer;
 
+enum states {
+    CONSOLE,
+    SNAKE,
+    MOUSE_TEST,
+    KEYBOARD_TEST,
+    DISABLED
+};
+
+enum states console_state = CONSOLE;
+
 //rings for notifications
-uintptr_t kbd_free;
-uintptr_t kbd_used;
+uintptr_t rx_free;
+uintptr_t rx_used;
 uintptr_t mse_free;
 uintptr_t mse_used;
-uintptr_t uts_free;
-uintptr_t uts_used;
 uintptr_t umass_req_free;
 uintptr_t umass_req_used;
 char* keysDown[8];
@@ -29,7 +41,6 @@ char* keysDown[8];
 /* Pointers to shared_ringbuffers */
 ring_handle_t *kbd_buffer_ring;
 ring_handle_t *mse_buffer_ring;
-ring_handle_t *uts_buffer_ring;
 ring_handle_t *umass_buffer_ring;
 
 //shell globals
@@ -67,8 +78,41 @@ int ta_align = 64;
 // for pdprint
 char *pd_name = "shell";
 
+//! should get this from device information, hardcoded for now
+#define SECTOR_SIZE 512
+
+/* #define alloc(x) kmem_alloc(x, 0) */
+#define alloc(x) ta_alloc(x)
+
+// from apple open source library
+int
+atoi(const char *in)
+{
+	char *c;
+	int ret;
+
+	ret = 0;
+	c = __UNCONST(in);
+	if (*c == '-')
+		c++;
+	for (; isdigit(*c); c++)
+		ret = (ret * 10) + (*c - '0');
+
+	return (*in == '-') ? -ret : ret;
+}
+
+
+#define ANSI_RED		"\x1b[1;31m"
+#define ANSI_GREEN		"\x1b[1;32m"
+#define ANSI_YELLOW		"\x1b[1;33m"
+#define ANSI_BLUE		"\x1b[1;34m"
+#define ANSI_WHITE		"\x1b[1;37m"
+#define ANSI_CLEAR		"\x1b[0m"
+
 void
 init_shell() {
+    umass_api_init();
+
     printf("                                                                    \n");
     printf("                                                                    \n");
     printf("        "ANSI_RED"  .d8888. "ANSI_CLEAR" db   db "ANSI_RED" d88888b "ANSI_CLEAR" db      "ANSI_RED" db        j88D "ANSI_CLEAR"           \n");
@@ -87,7 +131,7 @@ init_shell() {
     printf("          V8.  YP   YP Y88888P 88      YP   YP YP   YP  .8P         \n");
     printf("           VD                                         CP            \n");
     printf("                                                                    \n");
-    printf("                                                                    \n");
+    printf("                                                                    \n");NSI_RED, ANSI_CLEAR, ANSI_RED, ANSI_CLEAR, ANSI_RED, ANSI_CLEAR, ANSI_RED, ANSI_CLEAR)
     console_state = CONSOLE;
     printf("\nseL4 test>>> ");
 }
@@ -109,13 +153,6 @@ void parseSpace(char* str, char** parsed)
 
 void reset_prompt() {
     printf("\nseL4 test>>> ");
-}
-
-void help() {
-    for (int i = 0; i < no_commands; i++) {
-        printf("%s%*c- %s\n", command_list[i].keyword, 10 - strlen(command_list[i].keyword), ' ', command_list[i].short_description);
-    }
-    reset_prompt();
 }
 
 //callback for read
@@ -194,6 +231,13 @@ decode_command() {
                 strncpy(val, parsedArgs[3], sizeof(parsedArgs[3]));
                 enqueue_umass_request(0 ,false, blkno, nblks, val, &write_complete);
             }
+        } else if (!strcmp(parsedArgs[0], "rw")) {
+            char* val2 = kmem_alloc((SECTOR_SIZE * 1), 0);
+            char* val = kmem_alloc((SECTOR_SIZE * 8), 0);
+            strncpy(val, parsedArgs[1], sizeof(parsedArgs[1]));
+            enqueue_umass_request(0 ,false, 1, 8, val, &write_complete);
+            printf("between\n");
+            enqueue_umass_request(0 ,true, 1, 1, val2, &print_blocks);
         } else if (!strcmp(parsedArgs[0], "kbdtest")) {
             printf("\n");
             console_state = KEYBOARD_TEST;
@@ -202,13 +246,7 @@ decode_command() {
             *kbd_buffer = 'c';
             printf("set kbd_buffer to %c %p\n", *kbd_buffer, kbd_buffer);
             console_state = SNAKE;
-            microkit_notify(SNAKE_NOTIFY);
-        } else if (!strcmp(parsedArgs[0], "getdev")) {
-            print_device(atoi(parsedArgs[1]));
-        } else if (!strcmp(parsedArgs[0], "lsdev")) {
-            print_devs();
-        } else if (!strcmp(parsedArgs[0], "help") || !strcmp(parsedArgs[0], "?")) {
-            help();
+            microkit_notify(10);
         } else {
             printf("%s is not a recognised command!\n", parsedArgs[0]);
         }
@@ -418,27 +456,21 @@ init(void) {
         return 0;
     }
     kbd_buffer_ring = alloc(sizeof(*kbd_buffer_ring));
-    ring_init(kbd_buffer_ring, (ring_buffer_t *)kbd_free, (ring_buffer_t *)kbd_used, NULL, 0);
+    ring_init(kbd_buffer_ring, (ring_buffer_t *)rx_free, (ring_buffer_t *)rx_used, NULL, 0);
     mse_buffer_ring = alloc(sizeof(*mse_buffer_ring));
     ring_init(mse_buffer_ring, (ring_buffer_t *)mse_free, (ring_buffer_t *)mse_used, NULL, 0);
-    uts_buffer_ring = alloc(sizeof(*uts_buffer_ring));
-    ring_init(uts_buffer_ring, (ring_buffer_t *)uts_free, (ring_buffer_t *)uts_used, NULL, 0);
     umass_buffer_ring = alloc(sizeof(*umass_buffer_ring));
     ring_init(umass_buffer_ring, (ring_buffer_t *)umass_req_free, (ring_buffer_t *)umass_req_used, NULL, 0);
-    umass_api_init();
     print_info("Initialised\n");
 }
 
 void
 notified(microkit_channel ch) {
     switch(ch) {
-/* ----------------API NOTIFICATIONS---------- */
         case INIT:
             cmd_hist_cursor = 0;
             cmd_hist = -1;
             init_shell();
-            printf("\n");
-            help();
             break;
         case KEYBOARD_EVENT:
             if (console_state != DISABLED)
@@ -450,18 +482,13 @@ notified(microkit_channel ch) {
             else
                 handle_mouseEvent();
             break;
-        case TOUCHSCREEN_EVENT:
-            break;
         case UMASS_COMPLETE:
             handle_xfer_complete();
             break;
-        case NEW_DEVICE_EVENT:
-            handle_new_device();
-            break;
-/* ---------------------------------------- */
-        case SNAKE_NOTIFY:
+        case 10:
             console_state = CONSOLE;
             clear_prompt();
+            break;
         default:
             print_warn("Unexpected channel %d\n", ch);
     }
