@@ -437,8 +437,6 @@ notified(microkit_channel ch) {
             cmd_hist_cursor = 0;
             cmd_hist = -1;
             init_shell();
-            printf("\n");
-            help();
             break;
         case KEYBOARD_EVENT:
             if (console_state != DISABLED)
