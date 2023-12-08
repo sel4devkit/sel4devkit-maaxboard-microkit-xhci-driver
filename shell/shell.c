@@ -37,7 +37,6 @@ ring_handle_t *umass_buffer_ring;
 #define CMD_LIMIT 1024
 #define ARGMAX 10
 char cmd[CMD_LIMIT];
-static bool kbd_no_press = false;
 
 //shell history globals
 #define CMD_HISTORY 1024
@@ -380,6 +379,7 @@ handle_keypress()
                     printf("\nEnd of mouse test\n");
                     clear_prompt();
                 }
+                break;
             case KEYBOARD_TEST:
                 printf("0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n", ((char*)buffer)[0], ((char*)buffer)[1], ((char*)buffer)[2], ((char*)buffer)[3], ((char*)buffer)[4], ((char*)buffer)[5]);
                 printf("\r");
