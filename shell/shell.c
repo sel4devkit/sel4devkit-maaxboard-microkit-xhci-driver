@@ -67,27 +67,12 @@ int ta_align = 64;
 // for pdprint
 char *pd_name = "shell";
 
+void print_splash_screen_1(void);
+void print_splash_screen_2(void);
+
 void
 init_shell() {
-    printf("                                                                    \n");
-    printf("                                                                    \n");
-    printf("        "ANSI_RED"  .d8888. "ANSI_CLEAR" db   db "ANSI_RED" d88888b "ANSI_CLEAR" db      "ANSI_RED" db        j88D "ANSI_CLEAR"           \n");
-    printf("        "ANSI_RED"  88'  YP "ANSI_CLEAR" 88   88 "ANSI_RED" 88'     "ANSI_CLEAR" 88      "ANSI_RED" 88       j8~88 "ANSI_CLEAR"           \n");
-    printf("        "ANSI_RED"  `8bo.   "ANSI_CLEAR" 88ooo88 "ANSI_RED" 88ooooo "ANSI_CLEAR" 88      "ANSI_RED" 88      j8' 88 "ANSI_CLEAR"           \n");
-    printf("        "ANSI_RED"    `Y8b. "ANSI_CLEAR" 88~~~88 "ANSI_RED" 88~~~~~ "ANSI_CLEAR" 88      "ANSI_RED" 88      V88888D"ANSI_CLEAR"           \n");
-    printf("        "ANSI_RED"  db   8D "ANSI_CLEAR" 88   88 "ANSI_RED" 88.     "ANSI_CLEAR" 88booo. "ANSI_RED" 88booo.     88 "ANSI_CLEAR"           \n");
-    printf("        "ANSI_RED"  `8888Y' "ANSI_CLEAR" YP   YP "ANSI_RED" Y88888P "ANSI_CLEAR" Y88888P "ANSI_RED" Y88888P     VP "ANSI_CLEAR"           \n");
-    printf("                                                                    \n");
-    printf("                                                                    \n");
-    printf("            dD  .d8b.  db      d8888b. db   db  .d8b.  Cb           \n");
-    printf("          d8'  d8' `8b 88      88  `8D 88   88 d8' `8b  `8b         \n");
-    printf("         d8    88ooo88 88      88oodD' 88ooo88 88ooo88    8b        \n");
-    printf("        C88    88~~~88 88      88~~~   88~~~88 88~~~88    88D       \n");
-    printf("         V8    88   88 88booo. 88      88   88 88   88    8P        \n");
-    printf("          V8.  YP   YP Y88888P 88      YP   YP YP   YP  .8P         \n");
-    printf("           VD                                         CP            \n");
-    printf("                                                                    \n");
-    printf("                                                                    \n");
+    print_splash_screen_2();
     console_state = CONSOLE;
     printf("\nseL4 test>>> ");
 }
@@ -460,7 +445,51 @@ notified(microkit_channel ch) {
         case SNAKE_NOTIFY:
             console_state = CONSOLE;
             clear_prompt();
+            break;
         default:
             print_warn("Unexpected channel %d\n", ch);
     }
+}
+
+void print_splash_screen_1(void) {
+    printf("                                                                    \n");
+    printf("                                                                    \n");
+    printf("        "ANSI_RED"  .d8888. "ANSI_CLEAR" db   db "ANSI_RED" d88888b "ANSI_CLEAR" db      "ANSI_RED" db        j88D "ANSI_CLEAR"           \n");
+    printf("        "ANSI_RED"  88'  YP "ANSI_CLEAR" 88   88 "ANSI_RED" 88'     "ANSI_CLEAR" 88      "ANSI_RED" 88       j8~88 "ANSI_CLEAR"           \n");
+    printf("        "ANSI_RED"  `8bo.   "ANSI_CLEAR" 88ooo88 "ANSI_RED" 88ooooo "ANSI_CLEAR" 88      "ANSI_RED" 88      j8' 88 "ANSI_CLEAR"           \n");
+    printf("        "ANSI_RED"    `Y8b. "ANSI_CLEAR" 88~~~88 "ANSI_RED" 88~~~~~ "ANSI_CLEAR" 88      "ANSI_RED" 88      V88888D"ANSI_CLEAR"           \n");
+    printf("        "ANSI_RED"  db   8D "ANSI_CLEAR" 88   88 "ANSI_RED" 88.     "ANSI_CLEAR" 88booo. "ANSI_RED" 88booo.     88 "ANSI_CLEAR"           \n");
+    printf("        "ANSI_RED"  `8888Y' "ANSI_CLEAR" YP   YP "ANSI_RED" Y88888P "ANSI_CLEAR" Y88888P "ANSI_RED" Y88888P     VP "ANSI_CLEAR"           \n");
+    printf("                                                                    \n");
+    printf("                                                                    \n");
+    printf("            dD  .d8b.  db      d8888b. db   db  .d8b.  Cb           \n");
+    printf("          d8'  d8' `8b 88      88  `8D 88   88 d8' `8b  `8b         \n");
+    printf("         d8    88ooo88 88      88oodD' 88ooo88 88ooo88    8b        \n");
+    printf("        C88    88~~~88 88      88~~~   88~~~88 88~~~88    88D       \n");
+    printf("         V8    88   88 88booo. 88      88   88 88   88    8P        \n");
+    printf("          V8.  YP   YP Y88888P 88      YP   YP YP   YP  .8P         \n");
+    printf("           VD                                         CP            \n");
+    printf("                                                                    \n");
+    printf("                                                                    \n");
+}
+
+void print_splash_screen_2(void) {
+    printf("                                                         $$$$$$                         \n");
+    printf("                                                         $$$$$$             $$$$$$      \n");
+    printf("        $$$$$$$$$$$$                                     $$$$$$           $$$$$$$$      \n");
+    printf("     $$$$$$$$$$$$$$$$$$         $$$$$$$$$    $$$$$$$$    $$$$$$          $$$$$$$$$      \n");
+    printf("   $$$$$$$$$$$$$$$$$$$$$$      $$$$   $$$$  $$$$  $$$$   $$$$$$        $$$$$$$$$$$      \n");
+    printf("  $$$$$$$$$$$$$$$$$$$$$$$$      $$$$$       $$$$$$$$$$   $$$$$$      $$$$$  $$$$$$      \n");
+    printf(" $$$$$$$$$$$$$$$$$$$$$$$$$$         $$$$$   $$$$         $$$$$$    $$$$$    $$$$$$      \n");
+    printf("$$$$$$$    $$$$$$$$$$$$$$$$$   $$$$   $$$$  $$$$  $$$$   $$$$$$$  $$$$$     $$$$$$      \n");
+    printf("$$$$$$      $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$   \n");
+    printf("$$$$$$      $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$   \n");
+    printf("$$$$$$$    $$$$$$$$$$$$$$$$$         _____ __  __________    __             $$$$$$      \n");
+    printf(" $$$$$$$$$$$$$$$$$$$$$$$$$$         / ___// / / / ____/ /   / /             $$$$$$      \n");
+    printf("  $$$$$$$$$$$$$$$$$$$$$$$$          \\__ \\/ /_/ / __/ / /   / /                          \n");
+    printf("   $$$$$$$$$$$$$$$$$$$$$$          ___/ / __  / /___/ /___/ /___                        \n");
+    printf("     $$$$$$$$$$$$$$$$$$           /____/_/ /_/_____/_____/_____/                        \n");
+    printf("        $$$$$$$$$$$$                                                                    \n");
+    printf("                                                                                        \n");
+    printf("                                                                                        \n");
 }
