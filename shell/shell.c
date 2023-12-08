@@ -449,6 +449,7 @@ notified(microkit_channel ch) {
                 handle_mouseEvent();
             break;
         case TOUCHSCREEN_EVENT:
+            printf("UTS event in shell\n");
             break;
         case UMASS_COMPLETE:
             handle_xfer_complete();
@@ -460,6 +461,7 @@ notified(microkit_channel ch) {
         case SNAKE_NOTIFY:
             console_state = CONSOLE;
             clear_prompt();
+            break;
         default:
             print_warn("Unexpected channel %d\n", ch);
     }
