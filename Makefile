@@ -36,7 +36,7 @@ LD := $(TOOLCHAIN)-ld
 AS := $(TOOLCHAIN)-as
 MICROKIT_TOOL ?= $(MICROKIT_SDK)/bin/microkit
 
-NETBSD_SRC			:=  dev_verbose.o subr_device.o subr_autoconf.o usbdi_util.o usbdi.o usbroothub.o sel4_bus_funcs.o dma.o usb.o usb_quirks.o usb_subr.o xhci.o usb_mem.o uhub.o hid.o uhidev.o ukbd.o ums.o uts.o hidms.o hidkbdmap.o ioconf.o tpcalib.o uhid.o umass.o umass_quirks.o umass_scsipi.o scsipi_base.o scsipiconf.o scsiconf.o scsi_base.o scsi_subr.o scsipi_ioctl.o heapsort.o strnvisx.o sd.o dksubr.o subr_disk.o subr_humanize.o hexdump.o fdt_openfirm.o fdt_phy.o fdt_subr.o strlist.o ofw_subr.o pmatch.o fdt_reset.o
+NETBSD_SRC	:= dev_verbose.o subr_device.o subr_autoconf.o usbdi_util.o usbdi.o usbroothub.o sel4_bus_funcs.o dma.o usb.o usb_quirks.o usb_subr.o xhci.o usb_mem.o uhub.o hid.o uhidev.o ukbd.o ums.o uts.o hidms.o hidkbdmap.o ioconf.o tpcalib.o uhid.o umass.o umass_quirks.o umass_scsipi.o scsipi_base.o scsipiconf.o scsiconf.o scsi_base.o scsi_subr.o scsipi_ioctl.o heapsort.o strnvisx.o sd.o dksubr.o subr_disk.o subr_humanize.o hexdump.o fdt_openfirm.o fdt_phy.o fdt_subr.o strlist.o ofw_subr.o pmatch.o fdt_reset.o
 FDT_SRC		:= fdt.o fdt_addresses.o fdt_empty_tree.o fdt_ro.o fdt_rw.o fdt_strerror.o fdt_sw.o fdt_wip.o
 UTILS		:= tinyalloc.o printf.o util.o timer.o
 
@@ -46,11 +46,10 @@ HARDWARE_OBJS 		:=  hardware_interrupts.o sel4_bus_funcs.o $(UTILS)
 MEM_OBJS			:=  mem_handler.o tinyalloc.o printf.o util.o
 SHELL_OBJS 			:=  shell.o hidkbdmap.o shared_ringbuffer.o printf.o tinyalloc.o xhci_api.o hexdump.o
 SNAKE_OBJS 			:=  snake.o
-SIMULATED_KBD_OBJS	:=  simulated_kbd.o printf.o tinyalloc.o
 
 BOARD_DIR := $(MICROKIT_SDK)/board/$(MICROKIT_BOARD)/$(MICROKIT_CONFIG)
 
-IMAGES := xhci_stub.elf hardware.elf software.elf mem_handler.elf shell.elf simulated_kbd.elf snake.elf
+IMAGES := xhci_stub.elf hardware.elf software.elf mem_handler.elf shell.elf snake.elf
 INC := $(BOARD_DIR)/include include/api include/tinyalloc include/wrapper $(NETBSD_DIR)/sys $(NETBSD_DIR)/sys/external/bsd/libfdt/dist $(NETBSD_DIR)/mach_include include/bus include/dma include/printf include/timer src/
 INC_PARAMS=$(foreach d, $(INC), -I$d)
 INC_NO_BSD := $(BOARD_DIR)/include include/api include/tinyalloc include/wrapper include/bus include/dma include/printf include/timer src/
@@ -265,9 +264,6 @@ $(BUILD_DIR)/shell.elf: $(addprefix $(BUILD_DIR)/, $(SHELL_OBJS))
 
 $(BUILD_DIR)/snake.elf: $(addprefix $(BUILD_DIR)/, $(SNAKE_OBJS))
 	$(LD) $(LDFLAGS) $^ libc.a $(LIBS) -o $@
-
-$(BUILD_DIR)/simulated_kbd.elf: $(addprefix $(BUILD_DIR)/, $(SIMULATED_KBD_OBJS))
-	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 
 $(IMAGE_FILE) $(REPORT_FILE): $(addprefix $(BUILD_DIR)/, $(IMAGES)) xhci_stub.system
 	$(MICROKIT_TOOL) xhci_stub.system --search-path $(BUILD_DIR) --board $(MICROKIT_BOARD) --config $(MICROKIT_CONFIG) -o $(IMAGE_FILE) -r $(REPORT_FILE)
