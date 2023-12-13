@@ -34,8 +34,10 @@
 
 #include <dev/fdt/fdtvar.h>
 #include <config_methods.h>
+#include <xhci_api.h>
 
 char* pd_name = "software_interrupts";
+int num_devices = 0; //unused
 
 uintptr_t xhci_base;
 uintptr_t dma_base;
@@ -52,8 +54,8 @@ uintptr_t mse_free;
 uintptr_t mse_used;
 uintptr_t uts_free;
 uintptr_t uts_used;
-uintptr_t umass_req_free; // unused
-uintptr_t umass_req_used; // unused
+uintptr_t umass_req_free;
+uintptr_t umass_req_used;
 uintptr_t usb_new_device_free; // unused
 uintptr_t usb_new_device_used; // unused
 
@@ -103,6 +105,8 @@ init(void) {
     ring_init(mse_buffer_ring, (ring_buffer_t *)mse_free, (ring_buffer_t *)mse_used, NULL, 0);
     uts_buffer_ring = kmem_alloc(sizeof(*uts_buffer_ring), 0);
     ring_init(uts_buffer_ring, (ring_buffer_t *)uts_free, (ring_buffer_t *)uts_used, NULL, 0);
+    umass_buffer_ring = kmem_alloc(sizeof(*umass_buffer_ring),0);
+    ring_init(umass_buffer_ring, (ring_buffer_t *)umass_req_free, (ring_buffer_t *)umass_req_used, NULL, 0);
     print_info("Initialised\n");
 }
 

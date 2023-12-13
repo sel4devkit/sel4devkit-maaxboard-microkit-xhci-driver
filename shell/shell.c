@@ -1,16 +1,12 @@
 /* This work is Crown Copyright NCSC, 2023. */
 #include <microkit.h>
 #include <shared_ringbuffer.h>
-#include <lib/libkern/libkern.h>
-#include <sys/kmem.h>
 #include <xhci_api.h>
-#include <tinyalloc.h>
 #include <shell.h>
-#include <printf.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <pdprint.h>
-
-// keycode defs
-#include <dev/wscons/wsksymdef.h>
+#include <string.h>
 
 // snake globals
 char* kbd_buffer;
@@ -53,18 +49,18 @@ extern const keysym_t hidkbd_keydesc_uk[];
 void init_mousetest();
 
 // heap(s)
-uintptr_t heap_base;
 uintptr_t other_heap_base;
-
-//heap specific globals
-uintptr_t ta_limit;
-uint64_t heap_size = 0x2000000;
-int ta_blocks = 1024;
-int ta_thresh = 16;
-int ta_align = 64;
 
 // for pdprint
 char *pd_name = "shell";
+
+// uts test screen
+#define SCREEN_WIDTH	30	/* the virtual screen width */
+#define SCREEN_HEIGHT	20	/* the virtual screen height */
+
+#define BORDER_CORNER	'+'	/* character at corners of border */
+#define BORDER_VERT		'|'	/* character for vertical border */
+#define BORDER_HORI		'-'	/* character for horizontal border */
 
 void print_splash_screen_1(void);
 void print_splash_screen_2(void);
@@ -153,17 +149,28 @@ decode_command() {
             cursor_index = 0;
             init_mousetest();
             return;
+        } else if (!strcmp(parsedArgs[0], "utstest")) {
+            console_state = UTS_TEST;
+            cmd_hist++;
+            history[cmd_hist] = kmem_alloc(sizeof(cmd),0);
+            strncpy(history[cmd_hist], cmd, sizeof(cmd));
+            cmd_hist_cursor = cmd_hist+1;
+            memset(cmd, '\0', sizeof(cmd));
+            printf("\n");
+            cursor_index = 0;
+            init_mousetest();
+            return;
         } else if (!strcmp(parsedArgs[0], "read")) {
             // catch invalid arguments
-            if (parsedArgs[3] != NULL || parsedArgs[1] == NULL || parsedArgs[2] == NULL | parsedArgs[2] < 1) {
+            if (parsedArgs[3] == NULL || parsedArgs[1] == NULL || parsedArgs[2] == NULL || parsedArgs[4] != NULL) { //TODO: get length of devices
                 printf("Invalid Args\n");
                 printf("Usage: read [blkno] [nblks]\n");
                 reset_prompt();
             } else {
-                int blkno = atoi(parsedArgs[1]);
-                int nblks = atoi(parsedArgs[2]);
+                int blkno = atoi(parsedArgs[2]);
+                int nblks = atoi(parsedArgs[3]);
                 char* val = kmem_alloc((SECTOR_SIZE * nblks), 0);
-                enqueue_umass_request(0 ,true, blkno, nblks, val, &print_blocks);
+                enqueue_umass_request(atoi(parsedArgs[1]),true, blkno, nblks, val, &print_blocks);
             }
         } else if (!strcmp(parsedArgs[0], "write")) {
             // catch invalid arguments
@@ -224,6 +231,7 @@ scroll_hist(int direction) {
         cmd_hist_cursor+=direction;
         strncpy(cmd, history[cmd_hist_cursor], sizeof(history[cmd_hist_cursor]));
     } else {
+        cmd_hist_cursor = cmd_hist+1;
         strncpy(cmd, "", sizeof(""));
     }
     cursor_index = strlen(cmd);
@@ -264,7 +272,30 @@ handle_mouseTest()
         kmem_free(buffer, sizeof(buffer));
     }
 }
+void
+handle_utsEvent()
+{
+    uintptr_t *buffer = 0;
+    unsigned int len = 0;
+    void *cookie = NULL;
 
+    int index;
+    while (!driver_dequeue(uts_buffer_ring->used_ring, (uintptr_t*)&buffer, &len, &cookie)) {
+        printf("%c%c%c%c%c%c\r", 61707,61707,61707,61707,61707,61707);
+        printf("x: %04d\n", buffer[0]);
+        printf("y: %04d\n", buffer[1]);
+        printf("z: %04d\n", buffer[2]);
+        if (buffer[3] & 0x1)
+            printf("left ");
+        if (buffer[3] & 0x2)
+            printf("mid ");
+        if (buffer[3] & 0x4)
+            printf("right ");
+        printf("                ");
+        printf("\n\n\n");
+        kmem_free(buffer, sizeof(buffer));
+    }
+}
 static void 
 handle_mouseEvent()
 {
@@ -396,19 +427,13 @@ handle_keypress()
 
 void
 init(void) {
-    ta_limit = heap_base + heap_size;
-    bool status = ta_init((void*)heap_base, (void*)ta_limit, ta_blocks, ta_thresh, ta_align);
-    if (!status) {
-        print_fatal("Heap initialisation failure %d\n", status);
-        return 0;
-    }
-    kbd_buffer_ring = alloc(sizeof(*kbd_buffer_ring));
+    kbd_buffer_ring = malloc(sizeof(*kbd_buffer_ring));
     ring_init(kbd_buffer_ring, (ring_buffer_t *)kbd_free, (ring_buffer_t *)kbd_used, NULL, 0);
-    mse_buffer_ring = alloc(sizeof(*mse_buffer_ring));
+    mse_buffer_ring = malloc(sizeof(*mse_buffer_ring));
     ring_init(mse_buffer_ring, (ring_buffer_t *)mse_free, (ring_buffer_t *)mse_used, NULL, 0);
-    uts_buffer_ring = alloc(sizeof(*uts_buffer_ring));
+    uts_buffer_ring = malloc(sizeof(*uts_buffer_ring));
     ring_init(uts_buffer_ring, (ring_buffer_t *)uts_free, (ring_buffer_t *)uts_used, NULL, 0);
-    umass_buffer_ring = alloc(sizeof(*umass_buffer_ring));
+    umass_buffer_ring = malloc(sizeof(*umass_buffer_ring));
     ring_init(umass_buffer_ring, (ring_buffer_t *)umass_req_free, (ring_buffer_t *)umass_req_used, NULL, 0);
     umass_api_init();
     print_info("Initialised\n");
@@ -434,7 +459,8 @@ notified(microkit_channel ch) {
                 handle_mouseEvent();
             break;
         case TOUCHSCREEN_EVENT:
-            printf("UTS event in shell\n");
+            if (console_state == UTS_TEST)
+                handle_utsEvent();
             break;
         case UMASS_COMPLETE:
             handle_xfer_complete();

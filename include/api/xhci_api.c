@@ -18,8 +18,9 @@ ring_handle_t *usb_new_device_ring;
 uintptr_t usb_new_device_free;
 uintptr_t usb_new_device_used;
 
-int dev_id;
-struct usb_new_device* usb_devices[MAX_DEVICES];
+int umass_id = 0;
+int num_devices = 0;
+struct sel4_usb_device* usb_devices[MAX_DEVICES];
 
 int execute_next();
 
@@ -34,16 +35,21 @@ void umass_api_init() {
     // New deivce event ring
     usb_new_device_ring = kmem_alloc(sizeof(*usb_new_device_ring), 0);
     ring_init(usb_new_device_ring, (ring_buffer_t *)usb_new_device_free, (ring_buffer_t *)usb_new_device_used, NULL, 0);
-    dev_id = 0;
 }
 
 
 int enqueue_umass_request(int dev_id, bool read, int blkno, int nblks, void* val, void* cb) {
     int xfer_id = ++current_xfer;
+    struct sel4_usb_device *dev = usb_devices[dev_id];
+    if (!(dev->class == 0 && dev->ifaceClass == 0x8)) {
+        printf("Device is not a mass storage device\n");
+        return -1;
+    }
 
     struct umass_request* umass_xfer = kmem_alloc(sizeof(struct umass_request), 0);
 
-    umass_xfer->dev_id = dev_id;
+    umass_xfer->dev_id = dev->id;
+    umass_xfer->umass_id = dev->umass_dev->umass_id;
     umass_xfer->read = read;
     umass_xfer->blkno = blkno;
     umass_xfer->nblks = nblks;
@@ -51,12 +57,12 @@ int enqueue_umass_request(int dev_id, bool read, int blkno, int nblks, void* val
     umass_xfer->cb = cb;
     umass_xfer->xfer_id = xfer_id;
 
-    enqueue_used(api_request_ring, (uintptr_t) umass_xfer, sizeof(umass_xfer), (void*)0);
+    enqueue_used(dev->umass_dev->api_request_ring, (uintptr_t) umass_xfer, sizeof(umass_xfer), (void*)0);
 
     // ensure reads and writes are executed in the order they arrived
-    if (!locked) {
-        locked = true;
-        return execute_next();
+    if (!dev->umass_dev->locked) {
+        dev->umass_dev->locked = true;
+        return execute_next(dev);
     } else {
         printf("device busy\n");
     }
@@ -64,16 +70,16 @@ int enqueue_umass_request(int dev_id, bool read, int blkno, int nblks, void* val
     return xfer_id;
 }
 
-int execute_next() {
+int execute_next(struct sel4_usb_device* dev) {
     uintptr_t *buffer = 0;
     unsigned int len = 0;
     void *cookie = NULL;
 
     int index;
-    if (!driver_dequeue(api_request_ring->used_ring, (uintptr_t*)&buffer, &len, &cookie)) {
+    if (!driver_dequeue(dev->umass_dev->api_request_ring->used_ring, (uintptr_t*)&buffer, &len, &cookie)) {
         struct umass_request* xfer = (struct umass_request*)buffer; 
         printf("xfer_id: %i    blkno: %i    nblks: %i\n", xfer->xfer_id, xfer->blkno, xfer->nblks);
-        active_xfer = xfer;
+        dev->umass_dev->active_xfer = xfer;
 
         bool empty = ring_empty(umass_buffer_ring->used_ring);
         int error = enqueue_used(umass_buffer_ring, (uintptr_t) xfer, sizeof(xfer), (void *)0);
@@ -91,17 +97,40 @@ int execute_next() {
 */
 void handle_xfer_complete()
 {
-    // do callback
-    if (active_xfer->cb)
-        (active_xfer->cb)(active_xfer);
+    uintptr_t *buffer = 0;
+    unsigned int len = 0;
+    void *cookie = NULL;
+    if(!driver_dequeue(umass_buffer_ring->free_ring, (uintptr_t*)&buffer, &len, &cookie)) {
+        printf("dequeue %d\n", (int)*buffer);
+        struct sel4_usb_device* dev = usb_devices[(int)*buffer];
+        // do callback
+        if (dev->umass_dev->active_xfer->cb)
+            (dev->umass_dev->active_xfer->cb)(dev->umass_dev->active_xfer);
 
-    active_xfer = NULL;
-    locked = false;
+        dev->umass_dev->active_xfer = NULL;
+        dev->umass_dev->locked = false;
+        kmem_free(buffer,0);
 
-    // if ring is not empty, do next xfer
-    if (!ring_empty(api_request_ring)) {
-        execute_next();
+        // if ring is not empty, do next xfer
+        if (!ring_empty(dev->umass_dev->api_request_ring)) {
+            execute_next(dev);
+        }
     }
+}
+
+void setup_mass_storage(struct sel4_usb_device* dev) {
+    struct sel4_umass_device* new_umass_dev = kmem_alloc(sizeof(struct sel4_umass_device), 0);
+
+    new_umass_dev->api_request_ring = kmem_alloc(sizeof(ring_buffer_t), 0);
+    ring_buffer_t *free_ring = (ring_buffer_t*) kmem_zalloc(0x200000, 0);
+    ring_buffer_t *used_ring = (ring_buffer_t*) kmem_zalloc(0x200000, 0);
+    ring_init(new_umass_dev->api_request_ring, free_ring, free_ring, NULL, 1);
+
+    new_umass_dev->umass_id = umass_id++;
+    new_umass_dev->locked = false;
+    new_umass_dev->active_xfer = NULL;
+
+    dev->umass_dev = new_umass_dev;
 }
 
 void
@@ -112,10 +141,12 @@ handle_new_device() {
 
     int index;
     while (!driver_dequeue(usb_new_device_ring->used_ring, (uintptr_t*)&buffer, &len, &cookie)) {
-        struct usb_new_device* dev = (struct usb_new_device*)buffer; 
-        dev->id = dev_id++;
+        struct sel4_usb_device* dev = (struct sel4_usb_device*)buffer; 
+        num_devices = num_devices > dev->id ? num_devices : dev->id;
         usb_devices[dev->id] = dev; 
-        //print_device(dev->id);
+        if (dev->class == 0)
+            if (dev->ifaceClass == 0x8)
+                setup_mass_storage(dev);
     }
 }
 
@@ -163,18 +194,30 @@ char* get_speed(int speed) {
 
 void print_device(int id)
 {
-    struct usb_new_device *dev = usb_devices[id];
-    printf("USB device:\n");
-    printf("    ID: %i\n", dev->id);
-    printf("    Vendor: %s (0x%04x)\n", dev->vendor, dev->vendorid);
-    printf("    Product: %s (0x%04x)\n", dev->product, dev->productid);
-    printf("    Class: %s\n", get_class(dev->class));
-    printf("    Speed: %s\n", get_speed(dev->speed));
+    struct sel4_usb_device *dev = usb_devices[id];
+    if (dev->class == 0)
+        printf("%i: %s,\tUSB Revision %02x\n", dev->id, get_class(dev->class), dev->rev);
+    else
+        printf("%i: %s,\tUSB Revision %02x\n", dev->id, get_class(dev->ifaceClass), dev->rev);
+    printf(" - %s %s\n", dev->vendor, dev->product);
+    printf(" - Vendor: 0%04x Product: 0x%04x\n", dev->vendorid, dev->productid);
+    printf(" - PacketSize: %d Configurations: %d\n", dev->mps, dev->num_configs);
+    if (dev->class == 0)
+        printf(" - Class: %s\n", get_class(dev->class));
+    else
+        printf(" - Class: (from interface) %s\n", get_class(dev->class));
+    printf(" - Speed: %s\n", get_speed(dev->speed));
+    if (dev->class == 0) {
+        printf(" - Interface info\n");
+        printf("    - Class: %s\n", get_class(dev->ifaceClass));
+    }
+    printf(" - Depth: %d\n", dev->depth);
 }
 
 void print_devs()
 {
-    for (int i = 0; i < dev_id; i++) {
+    for (int i = 0; i <= num_devices; i++) {
         print_device(i);
+        printf("\n");
     }
 }

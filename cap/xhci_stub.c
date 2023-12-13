@@ -90,6 +90,9 @@ ring_handle_t *uts_buffer_ring;
 ring_handle_t *umass_buffer_ring;
 ring_handle_t *usb_new_device_ring;
 
+// reset number of devices
+int num_devices = 0;
+
 void
 init(void) {
     uintptr_t fdt = microkit_msginfo_get_label(microkit_ppcall(44, seL4_MessageInfo_new(0,0,0,0)));
@@ -178,6 +181,7 @@ init(void) {
     usb_new_device_ring = kmem_alloc(sizeof(*usb_new_device_ring), 0);
     ring_init(usb_new_device_ring, (ring_buffer_t *)usb_new_device_free, (ring_buffer_t *)usb_new_device_used, NULL, 1);
 
+
     // setup xhci devices + tell software PD memory locations
     device_t parent_xhci = NULL;
 
@@ -225,7 +229,7 @@ init(void) {
     print_info("Initialised\n");
     usb_discover(usb_sc2);
     usb_discover(usb_sc);
-	microkit_notify(42); //notify client xhci is up and running
+	microkit_notify(INIT); //notify client xhci is up and running
 }
 
 void handle_umass_xfer()
@@ -240,10 +244,10 @@ void handle_umass_xfer()
 
         if (xfer->read) {
             printf("calling read_block: n: %i    s: %i\n", xfer->nblks, xfer->blkno);
-            read_block(xfer->blkno, xfer->nblks, xfer->val);
+            read_block(xfer->umass_id, xfer->blkno, xfer->nblks, xfer->val);
         } else {
             printf("calling write_block: n: %i    s: %i\n", xfer->nblks, xfer->blkno);
-            write_block(xfer->blkno, xfer->nblks, xfer->val);
+            write_block(xfer->dev_id, xfer->blkno, xfer->nblks, xfer->val);
         }
     }
     // TODO: xfer complete
@@ -265,14 +269,13 @@ notified(microkit_channel ch)
             if (usb_sc->sc_bus->ub_needsexplore || usb_sc2->sc_bus->ub_needsexplore) {
                 printf("Discover on USB3...\n");
                 usb_discover(usb_sc);
-                usb_discover(usb_sc2);
                 printf("USB3 discover finished\n");
             }
-            // if (usb_sc2->sc_bus->ub_needsexplore) {
-            //     print_debug("Discover on USB2...\n");
-            //     usb_discover(usb_sc2);
-            //     print_debug("USB2 discover finished\n");
-            // }
+            if (usb_sc2->sc_bus->ub_needsexplore) {
+                print_debug("Discover on USB2...\n");
+                usb_discover(usb_sc2);
+                print_debug("USB2 discover finished\n");
+            }
             break;
         case 47:
             handle_umass_xfer();
