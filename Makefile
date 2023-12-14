@@ -3,12 +3,14 @@
 #
 # SPDX-License-Identifier: BSD-2-Clause
 #
+
+# REQUIRED FOR FUNCTIONALITY
 ifeq ($(strip $(BUILD_DIR)),)
 $(error BUILD_DIR must be specified)
 endif
 
-ifeq ($(strip $(MICROKIT_SDK)),)
-$(error MICROKIT_SDK must be specified)
+ifeq ($(strip $(MICROKIT_TOOL)),)
+$(error MICROKIT_TOOL must be specified)
 endif
 
 ifeq ($(strip $(MICROKIT_BOARD)),)
@@ -17,10 +19,6 @@ endif
 
 ifeq ($(strip $(MICROKIT_CONFIG)),)
 $(error MICROKIT_CONFIG must be specified)
-endif
-
-ifeq ($(strip $(MICROKIT_DIR)),)
-$(error MICROKIT_DIR must be specified)
 endif
 
 ifeq ($(strip $(NETBSD_DIR)),)
@@ -34,7 +32,6 @@ CPU := cortex-a53
 CC := $(TOOLCHAIN)-gcc
 LD := $(TOOLCHAIN)-ld
 AS := $(TOOLCHAIN)-as
-MICROKIT_TOOL ?= $(MICROKIT_SDK)/bin/microkit
 
 NETBSD_SRC	:= dev_verbose.o subr_device.o subr_autoconf.o usbdi_util.o usbdi.o usbroothub.o sel4_bus_funcs.o dma.o usb.o usb_quirks.o usb_subr.o xhci.o usb_mem.o uhub.o hid.o uhidev.o ukbd.o ums.o uts.o hidms.o hidkbdmap.o ioconf.o tpcalib.o uhid.o umass.o umass_quirks.o umass_scsipi.o scsipi_base.o scsipiconf.o scsiconf.o scsi_base.o scsi_subr.o scsipi_ioctl.o heapsort.o strnvisx.o sd.o dksubr.o subr_disk.o subr_humanize.o hexdump.o fdt_openfirm.o fdt_phy.o fdt_subr.o strlist.o ofw_subr.o pmatch.o fdt_reset.o
 FDT_SRC		:= fdt.o fdt_addresses.o fdt_empty_tree.o fdt_ro.o fdt_rw.o fdt_strerror.o fdt_sw.o fdt_wip.o
@@ -44,19 +41,12 @@ XHCI_STUB_OBJS 		:=  xhci_stub.o $(NETBSD_SRC) $(FDT_SRC) imx8mq_usbphy.o dwc3_f
 SOFTWARE_OBJS 		:=  software_interrupts.o $(NETBSD_SRC) $(FDT_SRC) imx8mq_usbphy.o dwc3_fdt.o $(UTILS) shared_ringbuffer.o
 HARDWARE_OBJS 		:=  hardware_interrupts.o sel4_bus_funcs.o $(UTILS)
 MEM_OBJS			:=  mem_handler.o tinyalloc.o printf.o util.o
-SHELL_OBJS 			:=  shell.o hidkbdmap.o shared_ringbuffer.o printf.o tinyalloc.o xhci_api.o hexdump.o
-SNAKE_OBJS 			:=  snake.o
-
-BOARD_DIR := $(MICROKIT_SDK)/board/$(MICROKIT_BOARD)/$(MICROKIT_CONFIG)
 
 IMAGES := xhci_stub.elf hardware.elf software.elf mem_handler.elf shell.elf snake.elf
-INC := $(BOARD_DIR)/include include/api include/tinyalloc include/wrapper $(NETBSD_DIR)/sys $(NETBSD_DIR)/sys/external/bsd/libfdt/dist $(NETBSD_DIR)/mach_include include/bus include/dma include/printf include/timer src/
+INC := $(BOARD_DIR)/include include/shared_ringbuffer include/api include/tinyalloc include/wrapper $(NETBSD_DIR)/sys $(NETBSD_DIR)/sys/external/bsd/libfdt/dist $(NETBSD_DIR)/mach_include include/bus include/dma include/printf include/timer src/
 INC_PARAMS=$(foreach d, $(INC), -I$d)
-INC_NO_BSD := $(BOARD_DIR)/include include/api include/tinyalloc include/wrapper include/bus include/dma include/printf include/timer src/
-INC_NO_BSD_PARAMS=$(foreach d, $(INC_NO_BSD), -I$d)
 WARNINGS := -Wall -Wno-comment -Wno-return-type -Wno-unused-function -Wno-unused-value -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-pointer-sign
 CFLAGS := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 $(WARNINGS) $(INC_PARAMS) -I$(BOARD_DIR)/include -DSEL4 #-DSEL4_USB_DEBUG
-CFLAGS_NO_BSD := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 $(WARNINGS) $(INC_NO_BSD_PARAMS) -I$(BOARD_DIR)/include --specs=picolibc.specs -DSEL4 #-DSEL4_USB_DEBUG
 LDFLAGS := -L$(BOARD_DIR)/lib
 LIBS := -lmicrokit -Tmicrokit.ld
 
@@ -76,7 +66,6 @@ includes:
 	@mkdir -p ${NETBSD_DIR}/mach_include/aarch64
 	@ln -fs ${NETBSD_DIR}/sys/arch/arm/include/* $(NETBSD_DIR)/mach_include/aarch64/
 
-
 $(BUILD_DIR)/%.o: $(NETBSD_DIR)/sys/external/bsd/libfdt/dist/%.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
@@ -86,14 +75,11 @@ $(BUILD_DIR)/%.o: src/%.c Makefile
 $(BUILD_DIR)/%.o: include/api/%.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/%.o: cap/%.c Makefile
+$(BUILD_DIR)/%.o: include/shared_ringbuffer/%.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/%.o: shell/%.c Makefile
-	$(CC) -c $(CFLAGS) -Ishell/ $< -o $@
-
-$(BUILD_DIR)/%.o: games/%.c Makefile
-	$(CC) -c $(CFLAGS_NO_BSD) $< -o $@
+$(BUILD_DIR)/%.o: cap/%.c Makefile
+	$(CC) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/usb.o: $(NETBSD_DIR)/sys/dev/usb/usb.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
@@ -259,16 +245,32 @@ $(BUILD_DIR)/xhci_stub.elf: $(addprefix $(BUILD_DIR)/, $(XHCI_STUB_OBJS))
 $(BUILD_DIR)/hardware.elf: $(addprefix $(BUILD_DIR)/, $(HARDWARE_OBJS))
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 
+# EXAMPLE API USER
+
+INC_NO_BSD := $(BOARD_DIR)/include include/shared_ringbuffer include/api include/tinyalloc include/printf
+INC_NO_BSD_PARAMS=$(foreach d, $(INC_NO_BSD), -I$d)
+CFLAGS_NO_BSD := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 $(WARNINGS) $(INC_NO_BSD_PARAMS) -I$(BOARD_DIR)/include --specs=picolibc.specs -DSEL4 #-DSEL4_USB_DEBUG
+
+$(BUILD_DIR)/%.o: shell/%.c Makefile
+	$(CC) -c $(CFLAGS_NO_BSD) -Ishell/ $< -o $@
+
+$(BUILD_DIR)/%.o: games/%.c Makefile
+	$(CC) -c $(CFLAGS_NO_BSD) $< -o $@
+
+SHELL_OBJS 			:=  shell.o hidkbdmap.o shared_ringbuffer.o printf.o xhci_api.o hexdump.o
+SNAKE_OBJS 			:=  snake.o
+
 $(BUILD_DIR)/shell.elf: $(addprefix $(BUILD_DIR)/, $(SHELL_OBJS))
 	$(LD) $(LDFLAGS) $^ libc.a libg.a libm.a $(LIBS) -o $@
 
 $(BUILD_DIR)/snake.elf: $(addprefix $(BUILD_DIR)/, $(SNAKE_OBJS))
 	$(LD) $(LDFLAGS) $^ libc.a $(LIBS) -o $@
 
+# Build complete system
 $(IMAGE_FILE) $(REPORT_FILE): $(addprefix $(BUILD_DIR)/, $(IMAGES)) xhci_stub.system
 	$(MICROKIT_TOOL) xhci_stub.system --search-path $(BUILD_DIR) --board $(MICROKIT_BOARD) --config $(MICROKIT_CONFIG) -o $(IMAGE_FILE) -r $(REPORT_FILE)
 
 # clean
 clean:
-	rm -f *.o *.elf .depend*
+	rm -f $(BUILD_DIR)/*.o $(BUILD_DIR)/*.elf $(BUILD_DIR)/.depend*
 	find . -name \*.o |xargs --no-run-if-empty rm
