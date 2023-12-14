@@ -4,6 +4,7 @@
 #include <shared_ringbuffer.h>
 #include <sys/kmem.h>
 #include <printf.h>
+#include <stdlib.h>
 
 uintptr_t umass_free;
 uintptr_t umass_used;
