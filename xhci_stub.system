@@ -107,11 +107,6 @@
         <end pd="mem_handler" id="12"/>
         <end pd="software_interrupt" id="32"/>
     </channel>
-    <channel>
-        <end pd="mem_handler" id="5"/>
-        <end pd="shell" id="30"/>
-    </channel>
-
     <!--hand over fdt-->
     <channel>
         <end pd="mem_handler" id="4"/>
@@ -184,20 +179,16 @@
     To subscribe to the interrupts provided by a device, see the channel
     mappings below. The consumer PD requires xhci_api.c and xhci_api.h. -->
 
-    <memory_region name="shell_heap" size="0x2000000"/>
-    <memory_region name="shell_heap_end" size="0x1000"/>
+    <!-- These heap and heap ends are needed for the microkit LIBC.  They must
+    be mapped with the setvar __heap_start and __heap_end respectively as seen
+    below -->
+    <memory_region name="client_heap" size="0x2000000"/>
+    <memory_region name="client_heap_end" size="0x1000"/>
 
-    <!-- create memory region for consumption by libc -->
-    <memory_region name="snake_heap" size="0x2000000"/>
-    <memory_region name="snake_heap_end" size="0x1000"/>
-
-    <memory_region name="kbd_buffer" size="0x2000"/> <!-- simple character buffer to share with snake -->
-
-    <protection_domain name="shell" pp="true" priority="101">
-        <map mr="shell_heap" vaddr="0x30000000" perms="rw" cached="false" setvar_vaddr="__heap_start"/>
-        <map mr="shell_heap_end" vaddr="0x32000000" perms="rw" cached="false" setvar_vaddr="__heap_end"/>
+    <protection_domain name="example_client" pp="true" priority="101">
+        <map mr="client_heap" vaddr="0x30000000" perms="rw" cached="false" setvar_vaddr="__heap_start"/>
+        <map mr="client_heap_end" vaddr="0x32000000" perms="rw" cached="false" setvar_vaddr="__heap_end"/>
         <map mr="heap_mem" vaddr="0x50000000" perms="rw" cached="false" setvar_vaddr="other_heap_base"/>
-        <map mr="kbd_buffer" vaddr="0x60000000" perms="rw" cached="false" setvar_vaddr="kbd_buffer"/>
 
         <!-- shared memory for ring buffer mechanism -->
         <map mr="kbd_free" vaddr="0x4_000_000" perms="rw" cached="true" setvar_vaddr="kbd_free" />
@@ -211,75 +202,68 @@
         <map mr="uts_free" vaddr="0x5_400_000" perms="rw" cached="true" setvar_vaddr="uts_free" />
         <map mr="uts_used" vaddr="0x5_600_000" perms="rw" cached="true" setvar_vaddr="uts_used" />
 
-        <program_image path="shell.elf" />
+        <program_image path="example_client.elf" />
     </protection_domain>
-
-    <protection_domain name="snake" pp="true" priority="100">
-        <map mr="snake_heap" vaddr="0x53000000" perms="rw" cached="false" setvar_vaddr="__heap_start"/>
-        <map mr="snake_heap_end" vaddr="0x55000000" perms="rw" cached="false" setvar_vaddr="__heap_end"/>
-        <map mr="kbd_buffer" vaddr="0x60000000" perms="rw" cached="false" setvar_vaddr="kbd_buffer"/>
-        <program_image path="snake.elf" />
-    </protection_domain>
-
-    <channel>
-        <end pd="mem_handler" id="6"/>
-        <end pd="shell" id="31"/>
-    </channel>
-    <channel>
-        <end pd="mem_handler" id="7"/>
-        <end pd="shell" id="32"/>
-    </channel>
-
-
 
     <!-- API calls:
 
     Each channel represents an interrupt from the specified device. The ID of
     each channel can be found in xhci_api.h. To subscribe to a device interrupt
     include the channel id in the notified() function of the desired protection
-    domain. Then, use the driver_dequeue() method (example in shell.c) provided
+    domain. Then, use the driver_dequeue() method (example in example_client.c) provided
     by shared_ringbuffer library. Note that it is not necessary to subscribe to
     all devices. -->
+
+    <!-- DEV TEMPORARY:
+    
+    This is the memory handler that is used by the driver. This will change
+    sharing less information with the client, but for now use these calls to
+    allocate memory. All 3 are necessary-->
+    <channel>
+        <end pd="mem_handler" id="5"/>
+        <end pd="example_client" id="30"/>
+    </channel>
+    <channel>
+        <end pd="mem_handler" id="6"/>
+        <end pd="example_client" id="31"/>
+    </channel>
+    <channel>
+        <end pd="mem_handler" id="7"/>
+        <end pd="example_client" id="32"/>
+    </channel>
 
     <!-- Driver initialise complete -->
     <channel>
         <end pd="xhci_stub" id="40"/>
-        <end pd="shell" id="40"/>
+        <end pd="example_client" id="40"/>
     </channel>
     <!-- USB Device Connect Event -->
     <channel>
         <end pd="xhci_stub" id="45"/>
-        <end pd="shell" id="45"/>
+        <end pd="example_client" id="45"/>
     </channel>
     <!-- Keyboard interrupt -->
     <channel>
         <end pd="software_interrupt" id="46"/>
-        <end pd="shell" id="46"/>
+        <end pd="example_client" id="46"/>
     </channel>
     <channel>
         <end pd="xhci_stub" id="47"/>
-        <end pd="shell" id="47"/>
+        <end pd="example_client" id="47"/>
     </channel>
     <!-- Mouse interrupt -->
     <channel>
         <end pd="software_interrupt" id="48"/>
-        <end pd="shell" id="48"/>
+        <end pd="example_client" id="48"/>
     </channel>
     <!-- Touchscreen event -->
     <channel>
         <end pd="software_interrupt" id="49"/>
-        <end pd="shell" id="49"/>
+        <end pd="example_client" id="49"/>
     </channel>
     <!-- Umass xfer complete -->
     <channel>
         <end pd="software_interrupt" id="50"/>
-        <end pd="shell" id="50"/>
-    </channel>
-
-    <!-- Extra calls (not necessary) -->
-    <channel>
-        <!-- snake communication -->
-        <end pd="shell" id="10"/>
-        <end pd="snake" id="10"/>
+        <end pd="example_client" id="50"/>
     </channel>
 </system>

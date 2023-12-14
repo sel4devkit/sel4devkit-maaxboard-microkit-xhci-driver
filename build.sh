@@ -14,9 +14,10 @@ export PATH="$MICROKIT_DIR/../compiler/bin:$PATH"
 export SEL4_XHCI_PATH=$MICROKIT_DIR/example/maaxboard/xhci_stub
 export NETBSD_DIR="$SEL4_XHCI_PATH/netbsd/src"
 
+# make clean
+rm -r $BUILD_DIR/*
 make -C $SEL4_XHCI_PATH
 # if clean
-# make clean
 
 # specific to capgemini implementation
 echo 

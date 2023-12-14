@@ -42,7 +42,6 @@ SOFTWARE_OBJS 		:=  software_interrupts.o $(NETBSD_SRC) $(FDT_SRC) imx8mq_usbphy
 HARDWARE_OBJS 		:=  hardware_interrupts.o sel4_bus_funcs.o $(UTILS)
 MEM_OBJS			:=  mem_handler.o tinyalloc.o printf.o util.o
 
-IMAGES := xhci_stub.elf hardware.elf software.elf mem_handler.elf shell.elf snake.elf
 INC := $(BOARD_DIR)/include include/shared_ringbuffer include/api include/tinyalloc include/wrapper $(NETBSD_DIR)/sys $(NETBSD_DIR)/sys/external/bsd/libfdt/dist $(NETBSD_DIR)/mach_include include/bus include/dma include/printf include/timer src/
 INC_PARAMS=$(foreach d, $(INC), -I$d)
 WARNINGS := -Wall -Wno-comment -Wno-return-type -Wno-unused-function -Wno-unused-value -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-pointer-sign
@@ -50,12 +49,10 @@ CFLAGS := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 
 LDFLAGS := -L$(BOARD_DIR)/lib
 LIBS := -lmicrokit -Tmicrokit.ld
 
-IMAGE_FILE = $(BUILD_DIR)/loader.img
-REPORT_FILE = $(BUILD_DIR)/report.txt
+API_IMAGES := xhci_stub.elf hardware.elf software.elf mem_handler.elf 
+
 
 all: includes
-
-all: $(IMAGE_FILE)
 
 # create machine directory
 includes:
@@ -245,28 +242,28 @@ $(BUILD_DIR)/xhci_stub.elf: $(addprefix $(BUILD_DIR)/, $(XHCI_STUB_OBJS))
 $(BUILD_DIR)/hardware.elf: $(addprefix $(BUILD_DIR)/, $(HARDWARE_OBJS))
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 
-# EXAMPLE API USER
+# EXAMPLE EMPTY API USER
 
-INC_NO_BSD := $(BOARD_DIR)/include include/shared_ringbuffer include/api include/tinyalloc include/printf
-INC_NO_BSD_PARAMS=$(foreach d, $(INC_NO_BSD), -I$d)
-CFLAGS_NO_BSD := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 $(WARNINGS) $(INC_NO_BSD_PARAMS) -I$(BOARD_DIR)/include --specs=picolibc.specs -DSEL4 #-DSEL4_USB_DEBUG
+CLIENT_INC := $(BOARD_DIR)/include include/shared_ringbuffer include/api include/tinyalloc include/printf
+CLIENT_INC_PARAMS=$(foreach d, $(CLIENT_INC), -I$d)
+CLIENT_CFLAGS := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 $(WARNINGS) $(CLIENT_INC_PARAMS) -I$(BOARD_DIR)/include --specs=picolibc.specs -DSEL4 #-DSEL4_USB_DEBUG
 
-$(BUILD_DIR)/%.o: shell/%.c Makefile
-	$(CC) -c $(CFLAGS_NO_BSD) -Ishell/ $< -o $@
+$(BUILD_DIR)/%.o: empty-client/%.c Makefile
+	$(CC) -c $(CLIENT_CFLAGS) -Iempty-client/ $< -o $@
 
-$(BUILD_DIR)/%.o: games/%.c Makefile
-	$(CC) -c $(CFLAGS_NO_BSD) $< -o $@
+CLIENT_OBJS :=  empty-client.o hidkbdmap.o shared_ringbuffer.o printf.o xhci_api.o hexdump.o
 
-SHELL_OBJS 			:=  shell.o hidkbdmap.o shared_ringbuffer.o printf.o xhci_api.o hexdump.o
-SNAKE_OBJS 			:=  snake.o
+$(BUILD_DIR)/example_client.elf: $(addprefix $(BUILD_DIR)/, $(CLIENT_OBJS))
+	$(LD) $(LDFLAGS) $^ libc.a libm.a $(LIBS) -o $@
 
-$(BUILD_DIR)/shell.elf: $(addprefix $(BUILD_DIR)/, $(SHELL_OBJS))
-	$(LD) $(LDFLAGS) $^ libc.a libg.a libm.a $(LIBS) -o $@
-
-$(BUILD_DIR)/snake.elf: $(addprefix $(BUILD_DIR)/, $(SNAKE_OBJS))
-	$(LD) $(LDFLAGS) $^ libc.a $(LIBS) -o $@
 
 # Build complete system
+IMAGE_FILE = $(BUILD_DIR)/loader.img
+REPORT_FILE = $(BUILD_DIR)/report.txt
+
+all: $(IMAGE_FILE)
+
+IMAGES := $(API_IMAGES) example_client.elf
 $(IMAGE_FILE) $(REPORT_FILE): $(addprefix $(BUILD_DIR)/, $(IMAGES)) xhci_stub.system
 	$(MICROKIT_TOOL) xhci_stub.system --search-path $(BUILD_DIR) --board $(MICROKIT_BOARD) --config $(MICROKIT_CONFIG) -o $(IMAGE_FILE) -r $(REPORT_FILE)
 
