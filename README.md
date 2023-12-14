@@ -17,10 +17,12 @@ Specifically, we have provided support for these USB devices:
 - `xhci_stub.system`: microkit system description file.
 
 ## Requirements
-This driver expects to have the accompanying NetBSD fork.
-TEMP NOTE: use branch 'api' for both netbsd AND driver repo.
-
-This driver also assumes the existence of a built microkit sdk.
+- This driver expects to have the accompanying NetBSD fork.
+  - TEMP NOTE: use branch 'api' for netbsd
+  - TEMP NOTE: use branch 'api-empty for xhci_stub
+- This driver assumes the existence of a built microkit sdk.
+- This driver assumes build microkit libc (found in this [repository](https://github.com/sel4-cap/picolibc/tree/linker_crt))
+    - Use branch linker_crt
 ## Building
 To build this driver, use the `build.sh` bash script. The script assumes the driver has been pulled using the microkit manifest and therefore assumes the directory structure will mirror this.
 
