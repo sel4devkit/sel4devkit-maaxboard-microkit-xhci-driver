@@ -246,22 +246,21 @@
         <end pd="xhci_stub" id="40"/>
         <end pd="shell" id="40"/>
     </channel>
-    <!-- Keyboard interrupt -->
+    <!-- USB Device Connect Event -->
     <channel>
-        <end pd="software_interrupt" id="45"/>
+        <end pd="xhci_stub" id="45"/>
         <end pd="shell" id="45"/>
     </channel>
-    <!-- Mouse interrupt -->
+    <!-- Keyboard interrupt -->
     <channel>
         <end pd="software_interrupt" id="46"/>
         <end pd="shell" id="46"/>
     </channel>
-    <!-- Umass xfer request -->
     <channel>
         <end pd="xhci_stub" id="47"/>
         <end pd="shell" id="47"/>
     </channel>
-    <!-- Umass xfer complete -->
+    <!-- Mouse interrupt -->
     <channel>
         <end pd="software_interrupt" id="48"/>
         <end pd="shell" id="48"/>
@@ -271,9 +270,9 @@
         <end pd="software_interrupt" id="49"/>
         <end pd="shell" id="49"/>
     </channel>
-    <!-- USB Device Connect Event -->
+    <!-- Umass xfer complete -->
     <channel>
-        <end pd="xhci_stub" id="50"/>
+        <end pd="software_interrupt" id="50"/>
         <end pd="shell" id="50"/>
     </channel>
 

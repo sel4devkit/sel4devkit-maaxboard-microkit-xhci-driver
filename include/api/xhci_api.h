@@ -13,11 +13,11 @@
 #define USB_SPEED_SUPER_PLUS    5
 
 #define INIT                    40
-#define KEYBOARD_EVENT          45
-#define MOUSE_EVENT             46
-#define UMASS_COMPLETE          48
-#define TOUCHSCREEN_EVENT       49
-#define NEW_DEVICE_EVENT        50
+#define NEW_DEVICE_EVENT        45
+#define KEYBOARD_EVENT          46
+#define MOUSE_EVENT             48
+#define UMASS_COMPLETE          49
+#define TOUCHSCREEN_EVENT       50
 
 #define MAX_DEVICES 127
 
