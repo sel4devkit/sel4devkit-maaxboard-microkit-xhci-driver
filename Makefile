@@ -69,9 +69,6 @@ $(BUILD_DIR)/%.o: $(NETBSD_DIR)/sys/external/bsd/libfdt/dist/%.c Makefile
 $(BUILD_DIR)/%.o: src/%.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/%.o: include/api/%.c Makefile
-	$(CC) -c $(CFLAGS) $< -o $@
-
 $(BUILD_DIR)/%.o: include/shared_ringbuffer/%.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
@@ -247,6 +244,9 @@ $(BUILD_DIR)/hardware.elf: $(addprefix $(BUILD_DIR)/, $(HARDWARE_OBJS))
 CLIENT_INC := $(BOARD_DIR)/include include/shared_ringbuffer include/api include/tinyalloc include/printf
 CLIENT_INC_PARAMS=$(foreach d, $(CLIENT_INC), -I$d)
 CLIENT_CFLAGS := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 $(WARNINGS) $(CLIENT_INC_PARAMS) -I$(BOARD_DIR)/include --specs=picolibc.specs -DSEL4 #-DSEL4_USB_DEBUG
+
+$(BUILD_DIR)/%.o: include/api/%.c Makefile
+	$(CC) -c $(CLIENT_CFLAGS) $< -o $@
 
 $(BUILD_DIR)/%.o: empty-client/%.c Makefile
 	$(CC) -c $(CLIENT_CFLAGS) -Iempty-client/ $< -o $@

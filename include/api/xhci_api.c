@@ -2,9 +2,13 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <shared_ringbuffer.h>
-#include <sys/kmem.h>
 #include <printf.h>
 #include <stdlib.h>
+
+// TEMP
+#define kmem_zalloc(size, km_flag_t) (void*) microkit_msginfo_get_label(microkit_ppcall(31, seL4_MessageInfo_new(size, 1, 0, 0)));
+#define kmem_alloc(size, km_flag_t) (void*) microkit_msginfo_get_label(microkit_ppcall(30, seL4_MessageInfo_new(size, 1, 0, 0)));
+#define kmem_free(addr, size_t) microkit_msginfo_get_label(microkit_ppcall(32, seL4_MessageInfo_new((uintptr_t)addr, 1, 0, 0)));
 
 uintptr_t umass_free;
 uintptr_t umass_used;
