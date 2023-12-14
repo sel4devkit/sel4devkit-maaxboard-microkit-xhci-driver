@@ -50,6 +50,10 @@ The driver will require some memory regions to be mapped into both the driver PD
     - `uts_free/uts_used`
     - `usb_new_device_free/usb_new_device_used`
 - **Shared heap** to store data structures that would need to be shared between the PDs. This should also be mapped into all three PDs. Suggested size is `0x20000000`, but again, any size would be fine.
+- **libc heap**: a heap start and end to be used by picolibc. They must be mapped to `__heap_start` and `__heap_end` in the client PD.
+    - Note: for the time being, two distinct memory regions are required, with `__heap_end` simulating the end of the heap, and size should be as small as possible (`0x1000`).
+
+Examples of these can be seen in the `xhci_stub.system` file.
 
 ## Using driver
 To use the driver, see the sample client (in `sample_client`). The example is *subscribed* to all 4 devices. To subscribe to an interrupt, modify the `.system` file to connect the client to the appropriate channel (see below).
