@@ -247,6 +247,7 @@
         <end pd="software_interrupt" id="46"/>
         <end pd="example_client" id="46"/>
     </channel>
+    <!-- blank -->
     <channel>
         <end pd="xhci_stub" id="47"/>
         <end pd="example_client" id="47"/>

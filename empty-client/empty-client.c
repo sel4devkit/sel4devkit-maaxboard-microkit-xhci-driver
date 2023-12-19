@@ -42,7 +42,7 @@ uintptr_t other_heap_base;
 int __lshrti3(a,b) { return a >> b; }
 int __ashlti3(a,b) { return a << b; }
 
-/* Setup for getting printf functionality working */
+// Setup for getting printf functionality working {{{
 static int
 libc_microkit_putc(char c, FILE *file)
 {
@@ -62,7 +62,8 @@ static FILE __stdio = FDEV_SETUP_STREAM(libc_microkit_putc,
                     _FDEV_SETUP_WRITE);
 FILE *const stdin = &__stdio; __strong_reference(stdin, stdout); __strong_reference(stdin, stderr);
 // END OF LIBC
-//
+// }}}
+
 void
 handle_mouseevent() {
     uintptr_t *buffer = 0;
@@ -92,21 +93,9 @@ handle_keypress()
     }
 }
 
-void temp_init() {
-    kbd_buffer_ring = malloc(sizeof(*kbd_buffer_ring));
-    ring_init(kbd_buffer_ring, (ring_buffer_t *)kbd_free, (ring_buffer_t *)kbd_used, NULL, 0);
-    mse_buffer_ring = malloc(sizeof(*mse_buffer_ring));
-    ring_init(mse_buffer_ring, (ring_buffer_t *)mse_free, (ring_buffer_t *)mse_used, NULL, 0);
-    uts_buffer_ring = malloc(sizeof(*uts_buffer_ring));
-    ring_init(uts_buffer_ring, (ring_buffer_t *)uts_free, (ring_buffer_t *)uts_used, NULL, 0);
-    umass_buffer_ring = malloc(sizeof(*umass_buffer_ring));
-    ring_init(umass_buffer_ring, (ring_buffer_t *)umass_req_free, (ring_buffer_t *)umass_req_used, NULL, 0);
-}
-
 void
 init(void) {
     /* initialise  */
-    /* temp_init(); */
     api_init(&kbd_buffer_ring, &mse_buffer_ring, &uts_buffer_ring, &umass_buffer_ring);
     printf("CLIENT|Data structures initialised\n");
 }

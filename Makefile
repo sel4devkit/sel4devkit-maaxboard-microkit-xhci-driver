@@ -45,23 +45,30 @@ MEM_OBJS			:=  mem_handler.o tinyalloc.o printf.o util.o
 INC := $(BOARD_DIR)/include include/shared_ringbuffer include/api include/tinyalloc include/wrapper $(NETBSD_DIR)/sys $(NETBSD_DIR)/sys/external/bsd/libfdt/dist $(NETBSD_DIR)/mach_include include/bus include/dma include/printf include/timer src/
 INC_PARAMS=$(foreach d, $(INC), -I$d)
 WARNINGS := -Wall -Wno-comment -Wno-return-type -Wno-unused-function -Wno-unused-value -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-pointer-sign
-CFLAGS := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 $(WARNINGS) $(INC_PARAMS) -I$(BOARD_DIR)/include -DSEL4 #-DSEL4_USB_DEBUG
+CFLAGS := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 -MMD -MP $(WARNINGS) $(INC_PARAMS) -I$(BOARD_DIR)/include -DSEL4 #-DSEL4_USB_DEBUG
 LDFLAGS := -L$(BOARD_DIR)/lib
 LIBS := -lmicrokit -Tmicrokit.ld
+DEPENDS := $(BUILD_DIR)/*.d
+
+ifneq ($(depends),)
+include ($(DEPENDS))
+endif
 
 API_IMAGES := xhci_stub.elf hardware.elf software.elf mem_handler.elf 
 
+# all:
+# 	@echo $(DEPENDS)
 
-all: includes
+all: machine
 
 # create machine directory
-includes:
-	@mkdir -p ${NETBSD_DIR}/mach_include/machine
-	@ln -fs ${NETBSD_DIR}/sys/arch/evbarm/include/* $(NETBSD_DIR)/mach_include/machine/
-	@mkdir -p ${NETBSD_DIR}/mach_include/arm
-	@ln -fs ${NETBSD_DIR}/sys/arch/arm/include/* $(NETBSD_DIR)/mach_include/arm/
-	@mkdir -p ${NETBSD_DIR}/mach_include/aarch64
-	@ln -fs ${NETBSD_DIR}/sys/arch/arm/include/* $(NETBSD_DIR)/mach_include/aarch64/
+machine:
+	@mkdir -p $(NETBSD_DIR)/mach_include/machine
+	@ln -fs $(NETBSD_DIR)/sys/arch/evbarm/include/* $(NETBSD_DIR)/mach_include/machine/
+	@mkdir -p $(NETBSD_DIR)/mach_include/arm
+	@ln -fs $(NETBSD_DIR)/sys/arch/arm/include/* $(NETBSD_DIR)/mach_include/arm/
+	@mkdir -p $(NETBSD_DIR)/mach_include/aarch64
+	@ln -fs $(NETBSD_DIR)/sys/arch/arm/include/* $(NETBSD_DIR)/mach_include/aarch64/
 
 $(BUILD_DIR)/%.o: $(NETBSD_DIR)/sys/external/bsd/libfdt/dist/%.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
@@ -249,7 +256,7 @@ CLIENT_INC_PARAMS=$(foreach d, $(CLIENT_INC), -I$d)
 
 # step 2: declare compilation flags
 # included here are the recommended compilation flags
-CLIENT_CFLAGS := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 $(WARNINGS) $(CLIENT_INC_PARAMS) -I$(BOARD_DIR)/include --specs=picolibc.specs -DSEL4 #-DSEL4_USB_DEBUG
+CLIENT_CFLAGS := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 -MMD -MP  $(WARNINGS) $(CLIENT_INC_PARAMS) -I$(BOARD_DIR)/include --specs=picolibc.specs -DSEL4 #-DSEL4_USB_DEBUG
 
 # step 3: build xhci_api files
 $(BUILD_DIR)/%.o: include/api/%.c Makefile
@@ -274,17 +281,17 @@ $(BUILD_DIR)/example_client.elf: $(addprefix $(BUILD_DIR)/, $(CLIENT_OBJS))
 IMAGE_FILE = $(BUILD_DIR)/loader.img
 REPORT_FILE = $(BUILD_DIR)/report.txt
 
-all: $(IMAGE_FILE)
-
 # step 6: add elf file to list of images
 # Use $(API_IMAGES) to reference driver required elfs
 IMAGES := $(API_IMAGES) example_client.elf
 
+
 # step 7: build entire system
+all: $(IMAGE_FILE)
 $(IMAGE_FILE) $(REPORT_FILE): $(addprefix $(BUILD_DIR)/, $(IMAGES)) xhci_stub.system
 	$(MICROKIT_TOOL) xhci_stub.system --search-path $(BUILD_DIR) --board $(MICROKIT_BOARD) --config $(MICROKIT_CONFIG) -o $(IMAGE_FILE) -r $(REPORT_FILE)
 
 # step 8: (optional) clean
 clean:
-	rm -f $(BUILD_DIR)/*.o $(BUILD_DIR)/*.elf $(BUILD_DIR)/.depend*
+	rm -f $(BUILD_DIR)/*.o $(BUILD_DIR)/*.elf $(BUILD_DIR)/.depend* $(BUILD_DIR)/*.d
 	find . -name \*.o |xargs --no-run-if-empty rm

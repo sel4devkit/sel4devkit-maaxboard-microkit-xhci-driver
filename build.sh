@@ -6,7 +6,7 @@ export MICROKIT_TOOL="python -m microkit"
 export MICROKIT_DIR="$HOME/mk-manifest/microkit" #! change this to microkit directory
 export MICROKIT_SDK="$MICROKIT_DIR/release/microkit-sdk-1.2.6"
 export BOARD_DIR="$MICROKIT_SDK/board/$MICROKIT_BOARD/$MICROKIT_CONFIG"
-export BUILD_DIR="$MICROKIT_DIR/tmp_build"
+export BUILD_DIR="./xhci_build"
 
 export PYTHONPATH="$MICROKIT_DIR/tool"
 export PATH="$MICROKIT_DIR/../compiler/bin:$PATH"
@@ -15,9 +15,15 @@ export SEL4_XHCI_PATH=$MICROKIT_DIR/example/maaxboard/xhci_stub
 export NETBSD_DIR="$SEL4_XHCI_PATH/netbsd/src"
 
 # make clean
-rm -r $BUILD_DIR/*
-make -C $SEL4_XHCI_PATH
-# if clean
+mkdir -p $BUILD_DIR
+if [ "$1" = "clean" ]; then
+    make -C $SEL4_XHCI_PATH clean
+elif [ "$1" = "rebuild" ]; then
+    make -C $SEL4_XHCI_PATH clean
+    make -C $SEL4_XHCI_PATH
+else
+    make -C $SEL4_XHCI_PATH
+fi
 
 # specific to capgemini implementation
 echo 
