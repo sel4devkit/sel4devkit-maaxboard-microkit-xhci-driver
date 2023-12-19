@@ -67,7 +67,7 @@ struct sel4_usb_device {
 /**
  * Initialises required data structures for api
 */
-void api_init(ring_handle_t *kbd, ring_handle_t *mse, ring_handle_t *uts, ring_handle_t *umass);
+void api_init(ring_handle_t **kbd, ring_handle_t **mse, ring_handle_t **uts, ring_handle_t **umass);
 
 /**
  * Handles callback from complete mass storage API request

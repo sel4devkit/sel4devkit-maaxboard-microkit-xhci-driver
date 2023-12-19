@@ -4,6 +4,7 @@
 #include <shared_ringbuffer.h>
 #include <printf.h>
 #include <stdlib.h>
+#include <math.h>
 
 // TEMP
 #define kmem_zalloc(size, km_flag_t) (void*) microkit_msginfo_get_label(microkit_ppcall(31, seL4_MessageInfo_new(size, 1, 0, 0)));
@@ -42,15 +43,15 @@ int execute_next();
 /**
  * api_init(): initialise structures required by api
 */
-void api_init(ring_handle_t *kbd,ring_handle_t *mse,ring_handle_t *uts,ring_handle_t *umass) {
-    kbd = malloc(sizeof(*kbd));
-    ring_init(kbd, (ring_buffer_t *)kbd_free, (ring_buffer_t *)kbd_used, NULL, 0);
-    mse = malloc(sizeof(*mse));
-    ring_init(mse, (ring_buffer_t *)mse_free, (ring_buffer_t *)mse_used, NULL, 0);
-    uts = malloc(sizeof(*uts));
-    ring_init(uts, (ring_buffer_t *)uts_free, (ring_buffer_t *)uts_used, NULL, 0);
-    umass = malloc(sizeof(*umass));
-    ring_init(umass, (ring_buffer_t *)umass_req_free, (ring_buffer_t *)umass_req_used, NULL, 0);
+void api_init(ring_handle_t **kbd, ring_handle_t **mse, ring_handle_t **uts, ring_handle_t **umass) {
+    *kbd = (ring_handle_t*) malloc(sizeof(ring_handle_t));
+    ring_init(*kbd, (ring_buffer_t *)kbd_free, (ring_buffer_t *)kbd_used, NULL, 0);
+    *mse = (ring_handle_t*) malloc(sizeof(ring_handle_t));
+    ring_init(*mse, (ring_buffer_t *)mse_free, (ring_buffer_t *)mse_used, NULL, 0);
+    *uts = (ring_handle_t*) malloc(sizeof(ring_handle_t));
+    ring_init(*uts, (ring_buffer_t *)uts_free, (ring_buffer_t *)uts_used, NULL, 0);
+    *umass = (ring_handle_t*) malloc(sizeof(ring_handle_t));
+    ring_init(*umass, (ring_buffer_t *)umass_req_free, (ring_buffer_t *)umass_req_used, NULL, 0);
 
     // umass specific initialisation
     api_request_ring = kmem_alloc(sizeof(ring_buffer_t), 0);
@@ -225,12 +226,12 @@ void print_device(int id)
     else
         printf("%i: %s,\tUSB Revision %02x\n", dev->id, get_class(dev->ifaceClass), dev->rev);
     printf(" - %s %s\n", dev->vendor, dev->product);
-    printf(" - Vendor: 0%04x Product: 0x%04x\n", dev->vendorid, dev->productid);
-    printf(" - PacketSize: %d Configurations: %d\n", dev->mps, dev->num_configs);
+    printf(" - Vendor: 0x%04x Product: 0x%04x\n", dev->vendorid, dev->productid);
+    printf(" - PacketSize: %d Configurations: %d\n", (int) pow(2, dev->mps), dev->num_configs);
     if (dev->class == 0)
-        printf(" - Class: %s\n", get_class(dev->class));
-    else
         printf(" - Class: (from interface) %s\n", get_class(dev->class));
+    else
+        printf(" - Class: %s\n", get_class(dev->class));
     printf(" - Speed: %s\n", get_speed(dev->speed));
     if (dev->class == 0) {
         printf(" - Interface info\n");

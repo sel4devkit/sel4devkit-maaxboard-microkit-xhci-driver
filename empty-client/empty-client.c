@@ -62,6 +62,17 @@ static FILE __stdio = FDEV_SETUP_STREAM(libc_microkit_putc,
                     _FDEV_SETUP_WRITE);
 FILE *const stdin = &__stdio; __strong_reference(stdin, stdout); __strong_reference(stdin, stderr);
 // END OF LIBC
+//
+void
+handle_mouseevent() {
+    uintptr_t *buffer = 0;
+    unsigned int len = 0;
+    void *cookie = NULL;
+
+    while (!dequeue_used(mse_buffer_ring, (uintptr_t*)&buffer, &len, &cookie)) {
+        printf("x: %d, y: %d, z:%d, w:%d buttons 0x%x\n", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
+    }
+}
 
 static void 
 handle_keypress()
@@ -81,9 +92,21 @@ handle_keypress()
     }
 }
 
+void temp_init() {
+    kbd_buffer_ring = malloc(sizeof(*kbd_buffer_ring));
+    ring_init(kbd_buffer_ring, (ring_buffer_t *)kbd_free, (ring_buffer_t *)kbd_used, NULL, 0);
+    mse_buffer_ring = malloc(sizeof(*mse_buffer_ring));
+    ring_init(mse_buffer_ring, (ring_buffer_t *)mse_free, (ring_buffer_t *)mse_used, NULL, 0);
+    uts_buffer_ring = malloc(sizeof(*uts_buffer_ring));
+    ring_init(uts_buffer_ring, (ring_buffer_t *)uts_free, (ring_buffer_t *)uts_used, NULL, 0);
+    umass_buffer_ring = malloc(sizeof(*umass_buffer_ring));
+    ring_init(umass_buffer_ring, (ring_buffer_t *)umass_req_free, (ring_buffer_t *)umass_req_used, NULL, 0);
+}
+
 void
 init(void) {
     /* initialise  */
+    /* temp_init(); */
     api_init(&kbd_buffer_ring, &mse_buffer_ring, &uts_buffer_ring, &umass_buffer_ring);
     printf("CLIENT|Data structures initialised\n");
 }
@@ -99,7 +122,7 @@ notified(microkit_channel ch) {
             handle_keypress();
             break;
         case MOUSE_EVENT:
-            printf("mouse event not implemented\n");
+            handle_mouseevent();
             break;
         case TOUCHSCREEN_EVENT:
             printf("touchscreen event not implemented\n");
