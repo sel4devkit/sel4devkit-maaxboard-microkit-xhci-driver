@@ -2,8 +2,8 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <shared_ringbuffer.h>
-#include <printf.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <math.h>
 
 // TEMP
@@ -222,14 +222,14 @@ void print_device(int id)
 {
     struct sel4_usb_device *dev = usb_devices[id];
     if (dev->class == 0)
-        printf("%i: %s,\tUSB Revision %02x\n", dev->id, get_class(dev->class), dev->rev);
+        printf("%i: %s,\tUSB Revision %x.%x\n", dev->id, get_class(dev->ifaceClass), (dev->rev>>8)&0xff, (dev->rev>>0)&0xff);
     else
-        printf("%i: %s,\tUSB Revision %02x\n", dev->id, get_class(dev->ifaceClass), dev->rev);
+        printf("%i: %s,\tUSB Revision %x.%x\n", dev->id, get_class(dev->class), (dev->rev>>8)&0xff, (dev->rev>>0)&0xff);
     printf(" - %s %s\n", dev->vendor, dev->product);
     printf(" - Vendor: 0x%04x Product: 0x%04x\n", dev->vendorid, dev->productid);
-    printf(" - PacketSize: %d Configurations: %d\n", (int) pow(2, dev->mps), dev->num_configs);
+    printf(" - PacketSize: %d Configurations: %d\n", (int) dev->mps, dev->num_configs);
     if (dev->class == 0)
-        printf(" - Class: (from interface) %s\n", get_class(dev->class));
+        printf(" - Class: (from interface) %s\n", get_class(dev->ifaceClass));
     else
         printf(" - Class: %s\n", get_class(dev->class));
     printf(" - Speed: %s\n", get_speed(dev->speed));
