@@ -241,21 +241,34 @@ $(BUILD_DIR)/hardware.elf: $(addprefix $(BUILD_DIR)/, $(HARDWARE_OBJS))
 
 # EXAMPLE EMPTY API USER
 
-CLIENT_INC := $(BOARD_DIR)/include include/shared_ringbuffer include/api include/tinyalloc include/printf
+# step 1: declare includes
+# all of these includes are required for compilation of api
+# feel free to add more here
+CLIENT_INC := $(BOARD_DIR)/include include/shared_ringbuffer include/api include/empty-client
 CLIENT_INC_PARAMS=$(foreach d, $(CLIENT_INC), -I$d)
+
+# step 2: declare compilation flags
+# included here are the recommended compilation flags
 CLIENT_CFLAGS := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 $(WARNINGS) $(CLIENT_INC_PARAMS) -I$(BOARD_DIR)/include --specs=picolibc.specs -DSEL4 #-DSEL4_USB_DEBUG
 
+# step 3: build xhci_api files
 $(BUILD_DIR)/%.o: include/api/%.c Makefile
 	$(CC) -c $(CLIENT_CFLAGS) $< -o $@
 
+# step 4: build example client
 $(BUILD_DIR)/%.o: empty-client/%.c Makefile
-	$(CC) -c $(CLIENT_CFLAGS) -Iempty-client/ $< -o $@
+	$(CC) -c $(CLIENT_CFLAGS) $< -o $@
 
-CLIENT_OBJS :=  empty-client.o hidkbdmap.o shared_ringbuffer.o printf.o xhci_api.o hexdump.o
+# step 5: declare files to include in elf file
+# required files here are shared_ringbuffer and xhci_api. hidkbd map is a helper
+# file for decoding keypresses
+CLIENT_OBJS :=  empty-client.o hidkbdmap.o shared_ringbuffer.o xhci_api.o
 
+# step 6: compile elf
+# This example includes libc. Note the *_OBJS is required to tell the compiler which
+# o files to include
 $(BUILD_DIR)/example_client.elf: $(addprefix $(BUILD_DIR)/, $(CLIENT_OBJS))
 	$(LD) $(LDFLAGS) $^ libc.a libm.a $(LIBS) -o $@
-
 
 # Build complete system
 IMAGE_FILE = $(BUILD_DIR)/loader.img
@@ -263,11 +276,15 @@ REPORT_FILE = $(BUILD_DIR)/report.txt
 
 all: $(IMAGE_FILE)
 
+# step 6: add elf file to list of images
+# Use $(API_IMAGES) to reference driver required elfs
 IMAGES := $(API_IMAGES) example_client.elf
+
+# step 7: build entire system
 $(IMAGE_FILE) $(REPORT_FILE): $(addprefix $(BUILD_DIR)/, $(IMAGES)) xhci_stub.system
 	$(MICROKIT_TOOL) xhci_stub.system --search-path $(BUILD_DIR) --board $(MICROKIT_BOARD) --config $(MICROKIT_CONFIG) -o $(IMAGE_FILE) -r $(REPORT_FILE)
 
-# clean
+# step 8: (optional) clean
 clean:
 	rm -f $(BUILD_DIR)/*.o $(BUILD_DIR)/*.elf $(BUILD_DIR)/.depend*
 	find . -name \*.o |xargs --no-run-if-empty rm
