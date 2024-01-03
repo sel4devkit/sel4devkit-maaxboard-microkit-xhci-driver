@@ -2,13 +2,29 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <shared_ringbuffer.h>
-#include <sys/kmem.h>
-#include <printf.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+
+// TEMP
+#define kmem_zalloc(size, km_flag_t) (void*) microkit_msginfo_get_label(microkit_ppcall(31, seL4_MessageInfo_new(size, 1, 0, 0)));
+#define kmem_alloc(size, km_flag_t) (void*) microkit_msginfo_get_label(microkit_ppcall(30, seL4_MessageInfo_new(size, 1, 0, 0)));
+#define kmem_free(addr, size_t) microkit_msginfo_get_label(microkit_ppcall(32, seL4_MessageInfo_new((uintptr_t)addr, 1, 0, 0)));
 
 uintptr_t umass_free;
 uintptr_t umass_used;
 ring_handle_t *api_request_ring;
 extern ring_handle_t *umass_buffer_ring;
+
+// buffers for devices
+extern uintptr_t kbd_free;
+extern uintptr_t kbd_used;
+extern uintptr_t mse_free;
+extern uintptr_t mse_used;
+extern uintptr_t uts_free;
+extern uintptr_t uts_used;
+extern uintptr_t umass_req_free;
+extern uintptr_t umass_req_used;
 
 static int current_xfer = -1;
 static bool locked = false;
@@ -25,18 +41,28 @@ struct sel4_usb_device* usb_devices[MAX_DEVICES];
 int execute_next();
 
 /**
- * umass_api_init(): initialise rings required by api
+ * api_init(): initialise structures required by api
 */
-void umass_api_init() {
+void api_init(ring_handle_t **kbd, ring_handle_t **mse, ring_handle_t **uts, ring_handle_t **umass) {
+    *kbd = (ring_handle_t*) malloc(sizeof(ring_handle_t));
+    ring_init(*kbd, (ring_buffer_t *)kbd_free, (ring_buffer_t *)kbd_used, NULL, 0);
+    *mse = (ring_handle_t*) malloc(sizeof(ring_handle_t));
+    ring_init(*mse, (ring_buffer_t *)mse_free, (ring_buffer_t *)mse_used, NULL, 0);
+    *uts = (ring_handle_t*) malloc(sizeof(ring_handle_t));
+    ring_init(*uts, (ring_buffer_t *)uts_free, (ring_buffer_t *)uts_used, NULL, 0);
+    *umass = (ring_handle_t*) malloc(sizeof(ring_handle_t));
+    ring_init(*umass, (ring_buffer_t *)umass_req_free, (ring_buffer_t *)umass_req_used, NULL, 0);
+
+    // umass specific initialisation
     api_request_ring = kmem_alloc(sizeof(ring_buffer_t), 0);
     umass_free = (uintptr_t) kmem_alloc(0x200000, 0);
     umass_used = (uintptr_t) kmem_alloc(0x200000, 0);
     ring_init(api_request_ring, (ring_buffer_t *)umass_free, (ring_buffer_t *)umass_used, NULL, 1);
+
     // New deivce event ring
     usb_new_device_ring = kmem_alloc(sizeof(*usb_new_device_ring), 0);
     ring_init(usb_new_device_ring, (ring_buffer_t *)usb_new_device_free, (ring_buffer_t *)usb_new_device_used, NULL, 0);
 }
-
 
 int enqueue_umass_request(int dev_id, bool read, int blkno, int nblks, void* val, void* cb) {
     int xfer_id = ++current_xfer;
@@ -196,16 +222,16 @@ void print_device(int id)
 {
     struct sel4_usb_device *dev = usb_devices[id];
     if (dev->class == 0)
-        printf("%i: %s,\tUSB Revision %02x\n", dev->id, get_class(dev->class), dev->rev);
+        printf("%i: %s,\tUSB Revision %x.%x\n", dev->id, get_class(dev->ifaceClass), (dev->rev>>8)&0xff, (dev->rev>>0)&0xff);
     else
-        printf("%i: %s,\tUSB Revision %02x\n", dev->id, get_class(dev->ifaceClass), dev->rev);
+        printf("%i: %s,\tUSB Revision %x.%x\n", dev->id, get_class(dev->class), (dev->rev>>8)&0xff, (dev->rev>>0)&0xff);
     printf(" - %s %s\n", dev->vendor, dev->product);
-    printf(" - Vendor: 0%04x Product: 0x%04x\n", dev->vendorid, dev->productid);
-    printf(" - PacketSize: %d Configurations: %d\n", dev->mps, dev->num_configs);
+    printf(" - Vendor: 0x%04x Product: 0x%04x\n", dev->vendorid, dev->productid);
+    printf(" - PacketSize: %d Configurations: %d\n", (int) dev->mps, dev->num_configs);
     if (dev->class == 0)
-        printf(" - Class: %s\n", get_class(dev->class));
+        printf(" - Class: (from interface) %s\n", get_class(dev->ifaceClass));
     else
-        printf(" - Class: (from interface) %s\n", get_class(dev->class));
+        printf(" - Class: %s\n", get_class(dev->class));
     printf(" - Speed: %s\n", get_speed(dev->speed));
     if (dev->class == 0) {
         printf(" - Interface info\n");

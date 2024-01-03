@@ -65,9 +65,9 @@ struct sel4_usb_device {
 };
 
 /**
- * Initialises required rings for mass storage part of api
+ * Initialises required data structures for api
 */
-void umass_api_init();
+void api_init(ring_handle_t **kbd, ring_handle_t **mse, ring_handle_t **uts, ring_handle_t **umass);
 
 /**
  * Handles callback from complete mass storage API request

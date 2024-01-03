@@ -107,11 +107,6 @@
         <end pd="mem_handler" id="12"/>
         <end pd="software_interrupt" id="32"/>
     </channel>
-    <channel>
-        <end pd="mem_handler" id="5"/>
-        <end pd="shell" id="30"/>
-    </channel>
-
     <!--hand over fdt-->
     <channel>
         <end pd="mem_handler" id="4"/>
@@ -184,6 +179,9 @@
     To subscribe to the interrupts provided by a device, see the channel
     mappings below. The consumer PD requires xhci_api.c and xhci_api.h. -->
 
+    <!-- These heap and heap ends are needed for the microkit LIBC.  They must
+    be mapped with the setvar __heap_start and __heap_end respectively as seen
+    below -->
     <memory_region name="shell_heap" size="0x2000000"/>
     <memory_region name="shell_heap_end" size="0x1000"/>
 
@@ -221,6 +219,10 @@
         <program_image path="snake.elf" />
     </protection_domain>
 
+    <channel>
+        <end pd="mem_handler" id="5"/>
+        <end pd="shell" id="30"/>
+    </channel>
     <channel>
         <end pd="mem_handler" id="6"/>
         <end pd="shell" id="31"/>

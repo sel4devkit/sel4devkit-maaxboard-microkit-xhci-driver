@@ -427,15 +427,7 @@ handle_keypress()
 
 void
 init(void) {
-    kbd_buffer_ring = malloc(sizeof(*kbd_buffer_ring));
-    ring_init(kbd_buffer_ring, (ring_buffer_t *)kbd_free, (ring_buffer_t *)kbd_used, NULL, 0);
-    mse_buffer_ring = malloc(sizeof(*mse_buffer_ring));
-    ring_init(mse_buffer_ring, (ring_buffer_t *)mse_free, (ring_buffer_t *)mse_used, NULL, 0);
-    uts_buffer_ring = malloc(sizeof(*uts_buffer_ring));
-    ring_init(uts_buffer_ring, (ring_buffer_t *)uts_free, (ring_buffer_t *)uts_used, NULL, 0);
-    umass_buffer_ring = malloc(sizeof(*umass_buffer_ring));
-    ring_init(umass_buffer_ring, (ring_buffer_t *)umass_req_free, (ring_buffer_t *)umass_req_used, NULL, 0);
-    umass_api_init();
+    api_init(&kbd_buffer_ring, &mse_buffer_ring, &uts_buffer_ring, &umass_buffer_ring);
     print_info("Initialised\n");
 }
 
