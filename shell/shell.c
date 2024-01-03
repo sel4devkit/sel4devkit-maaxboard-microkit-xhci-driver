@@ -70,7 +70,6 @@ void
 init_shell() {
     print_splash_screen_2();
     console_state = CONSOLE;
-    /* console_state = KEYBOARD_TEST; */
     printf("\nseL4 test>>> ");
 }
 
