@@ -67,6 +67,10 @@ uintptr_t umass_req_used;
 uintptr_t usb_new_device_free;
 uintptr_t usb_new_device_used;
 
+// shared memory between client and driver
+uintptr_t shared_mem;
+uintptr_t shared_heap;
+
 struct intr_ptrs_holder *intr_ptrs;
 bool pipe_thread;
 int cold = 1;
@@ -100,6 +104,13 @@ init(void) {
         print_fatal("fdt magic failed\n");
         return;
     }
+
+    uint64_t shared_heap_size = 0x200000;
+    uint64_t ta_limit = shared_heap + shared_heap_size;
+    int ta_blocks = 2048;
+    int ta_thresh = 16;
+    int ta_align = 64;
+    bool status = ta_init((void*)shared_heap, (void*)ta_limit, ta_blocks, ta_thresh, ta_align);
 
     // init
     xhci_bus_methods_ptr = (struct usbd_bus_methods *) get_bus_methods();
@@ -247,16 +258,15 @@ void handle_umass_xfer()
             read_block(xfer->umass_id, xfer->blkno, xfer->nblks, xfer->val);
         } else {
             printf("calling write_block: n: %i    s: %i\n", xfer->nblks, xfer->blkno);
-            write_block(xfer->dev_id, xfer->blkno, xfer->nblks, xfer->val);
+            write_block(xfer->umass_id, xfer->blkno, xfer->nblks, xfer->val);
         }
     }
-    // TODO: xfer complete
 }
 
 void handle_usb_new_device()
 {
     // TODO
-    printf("new device");
+    printf("!!!!!!! new device");
 }
 
 

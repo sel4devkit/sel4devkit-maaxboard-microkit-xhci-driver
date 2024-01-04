@@ -59,6 +59,9 @@ uintptr_t umass_req_used;
 uintptr_t usb_new_device_free; // unused
 uintptr_t usb_new_device_used; // unused
 
+// shared memory between client and driver
+uintptr_t shared_mem;
+
 bool pipe_thread;
 
 //extern variables
@@ -77,6 +80,10 @@ struct usbd_pipe_methods *device_bulk_pointer;
 struct usbd_pipe_methods *device_bulk_pointer_other;
 int cold = 1;
 
+// shared heap base with client
+uintptr_t shared_heap;
+uintptr_t shared_soft_heap;
+
 /* Pointers to shared_ringbuffers */
 ring_handle_t *kbd_buffer_ring;
 ring_handle_t *mse_buffer_ring;
@@ -86,6 +93,13 @@ ring_handle_t *usb_new_device_ring; // unused
 
 void
 init(void) {
+
+    uint64_t shared_heap_size = 0x200000;
+    uint64_t ta_limit = shared_soft_heap + shared_heap_size;
+    int ta_blocks = 2048;
+    int ta_thresh = 16;
+    int ta_align = 64;
+    bool status = ta_init((void*)shared_soft_heap, (void*)ta_limit, ta_blocks, ta_thresh, ta_align);
 
     config_init();
     cold = 0;

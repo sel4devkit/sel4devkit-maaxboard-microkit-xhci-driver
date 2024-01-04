@@ -29,6 +29,7 @@
         "xhci_api.h": "c",
         "wsmousevar.h": "c",
         "wsksymvar.h": "c",
-        "kmem.h": "c"
+        "kmem.h": "c",
+        "usbdi_util.h": "c"
     }
 }

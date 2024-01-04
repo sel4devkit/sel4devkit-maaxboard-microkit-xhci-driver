@@ -32,11 +32,9 @@ extern const keysym_t hidkbd_keydesc_uk[];
 
 // heap(s)
 uintptr_t other_heap_base;
-
-// TEMP: shared memory handler calls
-#define kmem_zalloc(size, km_flag_t) (void*) microkit_msginfo_get_label(microkit_ppcall(31, seL4_MessageInfo_new(size, 1, 0, 0)));
-#define kmem_alloc(size, km_flag_t) (void*) microkit_msginfo_get_label(microkit_ppcall(30, seL4_MessageInfo_new(size, 1, 0, 0)));
-#define kmem_free(addr, size_t) microkit_msginfo_get_label(microkit_ppcall(32, seL4_MessageInfo_new((uintptr_t)addr, 1, 0, 0)));
+uintptr_t shared_mem;
+uintptr_t shared_heap;
+uintptr_t shared_soft_heap;
 
 // TEMP: fixes for LIBC DO NOT REMOVE
 int __lshrti3(a,b) { return a >> b; }
