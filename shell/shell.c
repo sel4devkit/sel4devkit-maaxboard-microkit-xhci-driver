@@ -49,7 +49,8 @@ extern const keysym_t hidkbd_keydesc_uk[];
 void init_mousetest();
 
 // heap(s)
-uintptr_t other_heap_base;
+uintptr_t shared_heap;
+uintptr_t shared_soft_heap;
 
 // for pdprint
 char *pd_name = "shell";
@@ -141,8 +142,8 @@ decode_command() {
         } else if (!strcmp(parsedArgs[0], "mousetest")) {
             console_state = MOUSE_TEST;
             cmd_hist++;
-            history[cmd_hist] = kmem_alloc(sizeof(cmd),0);
-            strncpy(history[cmd_hist], cmd, sizeof(cmd));
+            history[cmd_hist] = malloc(sizeof(cmd));
+            strncpy(history[cmd_hist], cmd, strlen(cmd));
             cmd_hist_cursor = cmd_hist+1;
             memset(cmd, '\0', sizeof(cmd));
             printf("\n");
@@ -152,8 +153,8 @@ decode_command() {
         } else if (!strcmp(parsedArgs[0], "utstest")) {
             console_state = UTS_TEST;
             cmd_hist++;
-            history[cmd_hist] = kmem_alloc(sizeof(cmd),0);
-            strncpy(history[cmd_hist], cmd, sizeof(cmd));
+            history[cmd_hist] = malloc(sizeof(cmd));
+            strncpy(history[cmd_hist], cmd, strlen(cmd));
             cmd_hist_cursor = cmd_hist+1;
             memset(cmd, '\0', sizeof(cmd));
             printf("\n");
@@ -164,26 +165,27 @@ decode_command() {
             // catch invalid arguments
             if (parsedArgs[3] == NULL || parsedArgs[1] == NULL || parsedArgs[2] == NULL || parsedArgs[4] != NULL) { //TODO: get length of devices
                 printf("Invalid Args\n");
-                printf("Usage: read [blkno] [nblks]\n");
+                printf("Usage: read [devid] [blkno] [nblks]\n");
                 reset_prompt();
             } else {
                 int blkno = atoi(parsedArgs[2]);
                 int nblks = atoi(parsedArgs[3]);
-                char* val = kmem_alloc((SECTOR_SIZE * nblks), 0);
-                enqueue_umass_request(atoi(parsedArgs[1]),true, blkno, nblks, val, &print_blocks);
+                char* val = malloc((SECTOR_SIZE * nblks));
+                enqueue_umass_request(atoi(parsedArgs[1]), true, blkno, nblks, val, &print_blocks);
             }
         } else if (!strcmp(parsedArgs[0], "write")) {
             // catch invalid arguments
-            if (parsedArgs[3] == NULL || parsedArgs[1] == NULL || parsedArgs[2] == NULL || parsedArgs[4] != NULL) {
+            if (parsedArgs[4] == NULL || parsedArgs[3] == NULL || parsedArgs[1] == NULL || parsedArgs[2] == NULL || parsedArgs[5] != NULL) {
                 printf("Invalid Args\n");
-                printf("Usage: write [blkno] [nblks] [text]\n");
+                printf("Usage: write [devid] [blkno] [nblks] [text]\n");
                 reset_prompt();
             } else {
-                int blkno = atoi(parsedArgs[1]);
-                int nblks = atoi(parsedArgs[2]);
-                char* val = kmem_alloc((SECTOR_SIZE * nblks), 0);
-                strncpy(val, parsedArgs[3], sizeof(parsedArgs[3]));
-                enqueue_umass_request(0 ,false, blkno, nblks, val, &write_complete);
+                int blkno = atoi(parsedArgs[2]);
+                int nblks = atoi(parsedArgs[3]);
+                char* val = malloc((SECTOR_SIZE * nblks));
+                printf("%p val\n", val);
+                strncpy(val, parsedArgs[4], strlen(parsedArgs[4]));
+                enqueue_umass_request(atoi(parsedArgs[1]), false, blkno, nblks, val, &write_complete);
             }
         } else if (!strcmp(parsedArgs[0], "kbdtest")) {
             printf("\n");
@@ -204,8 +206,8 @@ decode_command() {
             printf("%s is not a recognised command!\n", parsedArgs[0]);
         }
         cmd_hist++;
-        history[cmd_hist] = kmem_alloc(sizeof(cmd),0);
-        strncpy(history[cmd_hist], cmd, sizeof(cmd));
+        history[cmd_hist] = malloc(sizeof(cmd));
+        strncpy(history[cmd_hist], cmd, strlen(cmd));
         cmd_hist_cursor = cmd_hist+1;
         memset(cmd, '\0', sizeof(cmd));
         printf("\n");
@@ -229,7 +231,7 @@ scroll_hist(int direction) {
     clear_prompt();
     if (cmd_hist_cursor + direction <= cmd_hist && cmd_hist_cursor + direction >= 0) {
         cmd_hist_cursor+=direction;
-        strncpy(cmd, history[cmd_hist_cursor], sizeof(history[cmd_hist_cursor]));
+        strncpy(cmd, history[cmd_hist_cursor], strlen(history[cmd_hist_cursor]));
     } else {
         cmd_hist_cursor = cmd_hist+1;
         strncpy(cmd, "", sizeof(""));
@@ -269,7 +271,6 @@ handle_mouseTest()
             printf("right ");
         printf("                ");
         printf("\n\n\n");
-        kmem_free(buffer, sizeof(buffer));
     }
 }
 void
@@ -293,7 +294,6 @@ handle_utsEvent()
             printf("right ");
         printf("                ");
         printf("\n\n\n");
-        kmem_free(buffer, sizeof(buffer));
     }
 }
 static void 
@@ -310,7 +310,6 @@ handle_mouseEvent()
         } else if ((int)buffer[2] >= 1) {
             scroll_hist(1);
         }
-        kmem_free(buffer, sizeof(buffer));
     }
 }
 
@@ -324,6 +323,7 @@ handle_keypress()
     int index;
     while (!driver_dequeue(kbd_buffer_ring->used_ring, (uintptr_t*)&buffer, &len, &cookie)) {
         //get unique keypress
+
         uint8_t keyPressed;
         int unique_id = -1;
         int temp_unique_id = -1;
@@ -421,7 +421,6 @@ handle_keypress()
             default:
                 print_fatal("Unrecognised keyboard state\n");
         }
-        kmem_free(buffer, sizeof(buffer));
     }
 }
 

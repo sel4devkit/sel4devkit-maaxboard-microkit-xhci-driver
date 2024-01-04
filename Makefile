@@ -42,7 +42,7 @@ SOFTWARE_OBJS 		:=  software_interrupts.o $(NETBSD_SRC) $(FDT_SRC) imx8mq_usbphy
 HARDWARE_OBJS 		:=  hardware_interrupts.o sel4_bus_funcs.o $(UTILS)
 MEM_OBJS			:=  mem_handler.o tinyalloc.o printf.o util.o
 
-INC := $(BOARD_DIR)/include include/shared_ringbuffer include/api include/tinyalloc include/wrapper $(NETBSD_DIR)/sys $(NETBSD_DIR)/sys/external/bsd/libfdt/dist $(NETBSD_DIR)/mach_include include/bus include/dma include/printf include/timer src/
+INC := $(BOARD_DIR)/include api/include/shared_ringbuffer api/include api/include/tinyalloc api/include/wrapper $(NETBSD_DIR)/sys $(NETBSD_DIR)/sys/external/bsd/libfdt/dist $(NETBSD_DIR)/mach_include api/include/bus api/include/dma api/include/printf api/include/timer api/utils/
 INC_PARAMS=$(foreach d, $(INC), -I$d)
 WARNINGS := -Wall -Wno-comment -Wno-return-type -Wno-unused-function -Wno-unused-value -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-pointer-sign
 CFLAGS := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 -MMD -MP $(WARNINGS) $(INC_PARAMS) -I$(BOARD_DIR)/include -DSEL4 #-DSEL4_USB_DEBUG
@@ -56,8 +56,7 @@ endif
 
 API_IMAGES := xhci_stub.elf hardware.elf software.elf mem_handler.elf 
 
-# all:
-# 	@echo $(DEPENDS)
+
 
 all: machine
 
@@ -73,13 +72,13 @@ machine:
 $(BUILD_DIR)/%.o: $(NETBSD_DIR)/sys/external/bsd/libfdt/dist/%.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/%.o: src/%.c Makefile
+$(BUILD_DIR)/%.o: $(SEL4_XHCI_PATH)/api/utils/%.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/%.o: include/shared_ringbuffer/%.c Makefile
+$(BUILD_DIR)/%.o: $(SEL4_XHCI_PATH)/api/include/shared_ringbuffer/%.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/%.o: cap/%.c Makefile
+$(BUILD_DIR)/%.o: $(SEL4_XHCI_PATH)/api/src/%.c Makefile
 	$(CC) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/usb.o: $(NETBSD_DIR)/sys/dev/usb/usb.c Makefile
@@ -251,19 +250,19 @@ $(BUILD_DIR)/hardware.elf: $(addprefix $(BUILD_DIR)/, $(HARDWARE_OBJS))
 # step 1: declare includes
 # all of these includes are required for compilation of api
 # feel free to add more here
-CLIENT_INC := $(BOARD_DIR)/include include/shared_ringbuffer include/api include/empty-client
+CLIENT_INC := $(BOARD_DIR)/include api/include examples/empty-client/
 CLIENT_INC_PARAMS=$(foreach d, $(CLIENT_INC), -I$d)
 
 # step 2: declare compilation flags
 # included here are the recommended compilation flags
-CLIENT_CFLAGS := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 -MMD -MP  $(WARNINGS) $(CLIENT_INC_PARAMS) -I$(BOARD_DIR)/include --specs=picolibc.specs -DSEL4 #-DSEL4_USB_DEBUG
+CLIENT_CFLAGS := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 -MMD -MP  $(WARNINGS) $(CLIENT_INC_PARAMS) -I$(BOARD_DIR)/include --specs=libc/picolibc.specs -DSEL4 #-DSEL4_USB_DEBUG
 
 # step 3: build xhci_api files
-$(BUILD_DIR)/%.o: include/api/%.c Makefile
+$(BUILD_DIR)/%.o: api/%.c Makefile
 	$(CC) -c $(CLIENT_CFLAGS) $< -o $@
 
 # step 4: build example client
-$(BUILD_DIR)/%.o: empty-client/%.c Makefile
+$(BUILD_DIR)/%.o: examples/empty-client/%.c Makefile
 	$(CC) -c $(CLIENT_CFLAGS) $< -o $@
 
 # step 5: declare files to include in elf file
@@ -275,7 +274,7 @@ CLIENT_OBJS :=  empty-client.o hidkbdmap.o shared_ringbuffer.o xhci_api.o
 # This example includes libc. Note the *_OBJS is required to tell the compiler which
 # o files to include
 $(BUILD_DIR)/example_client.elf: $(addprefix $(BUILD_DIR)/, $(CLIENT_OBJS))
-	$(LD) $(LDFLAGS) $^ libc.a libm.a $(LIBS) -o $@
+	$(LD) $(LDFLAGS) $^ libc/libc.a libc/libm.a $(LIBS) -o $@
 
 # Build complete system
 IMAGE_FILE = $(BUILD_DIR)/loader.img

@@ -1,6 +1,7 @@
 // keycode defs
 #include <wsksymdef.h>
 #include <stdio.h> 
+#include <stdlib.h>
 typedef unsigned short keysym_t;
 
 #define SNAKE_NOTIFY 10
@@ -71,9 +72,13 @@ enum states {
 enum states console_state = CONSOLE;
 
 //libc stuff
-#define kmem_zalloc(size, km_flag_t) (void*) microkit_msginfo_get_label(microkit_ppcall(31, seL4_MessageInfo_new(size, 1, 0, 0)));
-#define kmem_alloc(size, km_flag_t) (void*) microkit_msginfo_get_label(microkit_ppcall(30, seL4_MessageInfo_new(size, 1, 0, 0)));
-#define kmem_free(addr, size_t) microkit_msginfo_get_label(microkit_ppcall(32, seL4_MessageInfo_new((uintptr_t)addr, 1, 0, 0)));
+// #define kmem_zalloc(size, km_flag_t) (void*) microkit_msginfo_get_label(microkit_ppcall(31, seL4_MessageInfo_new(size, 1, 0, 0)));
+// #define kmem_alloc(size, km_flag_t) (void*) microkit_msginfo_get_label(microkit_ppcall(30, seL4_MessageInfo_new(size, 1, 0, 0)));
+// #define kmem_free(addr, size_t) microkit_msginfo_get_label(microkit_ppcall(32, seL4_MessageInfo_new((uintptr_t)addr, 1, 0, 0)));
+
+#define kmem_zalloc(size, km_flag_t) calloc(1, size);
+#define kmem_alloc(size, km_flag_t) malloc(size);
+#define kmem_free(addr, size_t) free(addr);
 
 int __lshrti3(a,b) { return a >> b; }
 int __ashlti3(a,b) { return a << b; }

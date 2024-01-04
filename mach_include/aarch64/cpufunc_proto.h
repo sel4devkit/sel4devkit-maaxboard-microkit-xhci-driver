@@ -1,0 +1,1 @@
+/home/jfelmeden/mk-manifest/microkit/example/maaxboard/xhci_stub/netbsd/src/sys/arch/arm/include/cpufunc_proto.h
