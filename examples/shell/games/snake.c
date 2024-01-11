@@ -137,9 +137,6 @@ int food[2]; /* (x, y) of current food position */
 int bonus[2]; /* (x, y) of current bonus position */
 int timer;
 
-int __lshrti3(a,b) { return a >> b; }
-int __ashlti3(a,b) { return a << b; }
-
 char getch(void) {
 	char ch = *kbd_buffer;
     

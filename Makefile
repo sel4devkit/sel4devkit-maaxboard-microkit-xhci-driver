@@ -30,4 +30,4 @@ CPU := cortex-a53
 
 include api/Makefile
 
-include examples/shell/Makefile
+include examples/$(EXAMPLE)/Makefile

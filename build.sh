@@ -14,11 +14,48 @@ export SEL4_XHCI_PATH=$MICROKIT_DIR/example/maaxboard/xhci_stub
 export BUILD_DIR=$SEL4_XHCI_PATH/xhci_build
 export NETBSD_DIR="$SEL4_XHCI_PATH/netbsd/src"
 
-# make clean
 mkdir -p $BUILD_DIR
-if [ "$1" = "clean" ]; then
+
+examples=( "shell" "empty-client" )
+
+print_examples() {
+    echo "available examples:"
+    for e in ${examples[@]}; do
+        echo "  $e"
+    done
+}
+
+print_usage() {
+    echo "usage: ./build.sh -e [example] [clean|rebuild]"
+    echo
+    print_examples
+    exit 1
+}
+
+while getopts 'e:' flag; do
+  case "${flag}" in
+    e) export EXAMPLE="${OPTARG}" ;;
+    *) print_usage ;;
+  esac
+done
+
+if [ -z "$EXAMPLE" ]; then
+    print_usage
+fi
+
+opt=${@:$OPTIND:1}
+
+if [[ ! " ${examples[*]} " =~ [[:space:]]${EXAMPLE}[[:space:]] ]]; then
+    # whatever you want to do when array doesn't contain value
+    echo "error: example '$EXAMPLE' not found!"
+    echo
+    print_examples
+    exit 1
+fi
+
+if [ "$opt" = "clean" ] | [ "$opt" = "c" ]; then
     make -C $SEL4_XHCI_PATH clean
-elif [ "$1" = "rebuild" ]; then
+elif [ "$opt" = "rebuild" ] | [ "$opt" = "r" ]; then
     make -C $SEL4_XHCI_PATH clean
     make -C $SEL4_XHCI_PATH
 else
