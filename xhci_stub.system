@@ -3,6 +3,7 @@
 <system>
     <!-- driver required functionality MODIFY WITH CAUTION -->
     <memory_region name="heap_mem" size="0x2000000"/>
+    <memory_region name="heap_mem_end" size="0x1000"/>
     <memory_region name="dma_pool" size="0x2000000"/>
 
     <!-- modify THESE physical addresses and sizes to match desired device.
@@ -12,15 +13,19 @@
     <memory_region name="xhci_phys_mem" size="0x1000" phys_addr="0x382f0000"/> <!--won't let me specify the correct size or base address, but this encompasses the phy-->
 
     <memory_region name="shared_heap" size="0x200_000"/>
+    <memory_region name="shared_heap_end" size="0x1000"/>
+
     <memory_region name="shared_soft_heap" size="0x200_000"/>
+    <memory_region name="shared_soft_heap_end" size="0x1000"/>
 
     <!-- !EXAMPLE API:
     These heap and heap ends are needed for the microkit LIBC.  They must
     be mapped with the setvar __heap_start and __heap_end respectively as seen
     below. They need to be declared here as they are mapped into xhci_stub and
     software_interrupts -->
-    <memory_region name="shell_heap" size="0x2000000"/>
-    <memory_region name="shell_heap_end" size="0x1000"/>
+    <memory_region name="client_heap" size="0x2000000"/>
+    <memory_region name="client_heap_end" size="0x1000"/>
+
 
 
     <!-- shared memory for ring buffer mechanism -->
@@ -42,8 +47,10 @@
         <map mr="xhci_mem" vaddr="0x38200000" perms="rw" cached="false" setvar_vaddr="xhci_base"/>
         <map mr="xhci_phys_mem" vaddr="0x382f0000" perms="rw" cached="false" setvar_vaddr="xhci_phy_base"/>
         <map mr="timer_mem" vaddr="0x306c0000" perms="rw" cached="false" setvar_vaddr="timer_base"/>
-        <map mr="shell_heap" vaddr="0x20000000" perms="rw" cached="false" setvar_vaddr="shared_mem"/>
-        <map mr="shared_heap" vaddr="0x5_a00_000" perms="rw" cached="false" setvar_vaddr="shared_heap"/>
+        <map mr="client_heap" vaddr="0x20000000" perms="rw" cached="false" setvar_vaddr="shared_mem"/>
+        <map mr="shared_heap" vaddr="0x5_a00_000" perms="rw" cached="false" setvar_vaddr="__heap_start"/>
+        <map mr="shared_heap_end" vaddr="0x5_bf0_000" perms="rw" cached="false" setvar_vaddr="__heap_end"/>
+        <map mr="shared_soft_heap" vaddr="0x5_800_000" perms="rw" cached="false"/>
         
         <!-- shared memory for ring buffer mechanism -->
         <map mr="kbd_free" vaddr="0x4_000_000" perms="rw" cached="true" setvar_vaddr="kbd_free" />
@@ -62,7 +69,11 @@
     </protection_domain>
 
     <protection_domain name="mem_handler" pp="true" priority="252">
-        <map mr="heap_mem" vaddr="0x50000000" perms="rw" cached="false" setvar_vaddr="heap_base"/>
+        <map mr="heap_mem" vaddr="0x50000000" perms="rw" cached="false" setvar_vaddr="__heap_start"/>
+        <map mr="heap_mem_end" vaddr="0x52000000" perms="rw" cached="false" setvar_vaddr="__heap_end"/>
+        <map mr="shared_heap" vaddr="0x5_a00_000" perms="rw" cached="false"/>
+        <map mr="shared_soft_heap" vaddr="0x5_800_000" perms="rw" cached="false"/>
+        <map mr="client_heap" vaddr="0x20000000" perms="rw" cached="false"/>
         <program_image path="mem_handler.elf" />
     </protection_domain>
 
@@ -81,9 +92,10 @@
         <map mr="dma_pool" vaddr="0x54000000" perms="rw" cached="true" setvar_vaddr="dma_base"/>
         <map mr="xhci_mem" vaddr="0x38200000" perms="rw" cached="false" setvar_vaddr="xhci_base"/>
         <map mr="timer_mem" vaddr="0x306c0000" perms="rw" cached="false" setvar_vaddr="timer_base"/>
-        <map mr="shell_heap" vaddr="0x20000000" perms="rw" cached="false" setvar_vaddr="shared_mem"/>
+        <map mr="client_heap" vaddr="0x20000000" perms="rw" cached="false" setvar_vaddr="shared_mem"/>
         <map mr="shared_heap" vaddr="0x5_a00_000" perms="rw" cached="false" setvar_vaddr="shared_heap"/>
-        <map mr="shared_soft_heap" vaddr="0x5_800_000" perms="rw" cached="false" setvar_vaddr="shared_soft_heap"/>
+        <map mr="shared_soft_heap" vaddr="0x5_800_000" perms="rw" cached="false" setvar_vaddr="__heap_start"/>
+        <map mr="shared_soft_heap_end" vaddr="0x5_9f0_000" perms="rw" cached="false" setvar_vaddr="__heap_end"/>
         <program_image path="software.elf" />
 
         <!-- shared memory for ring buffer mechanism (mass storage not handled here) -->
@@ -196,19 +208,11 @@
     To subscribe to the interrupts provided by a device, see the channel
     mappings below. The consumer PD requires xhci_api.c and xhci_api.h. -->
 
-    <!-- create memory region for consumption by libc -->
-    <memory_region name="snake_heap" size="0x2000000"/>
-    <memory_region name="snake_heap_end" size="0x1000"/>
-
-    <memory_region name="kbd_buffer" size="0x2000"/> <!-- simple character buffer to share with snake -->
-
-    <protection_domain name="shell" pp="true" priority="101">
-        <map mr="shell_heap" vaddr="0x20000000" perms="rw" cached="false" setvar_vaddr="__heap_start"/>
-        <map mr="shell_heap_end" vaddr="0x22000000" perms="rw" cached="false" setvar_vaddr="__heap_end"/>
-        <!-- <map mr="heap_mem" vaddr="0x50000000" perms="rw" cached="false" setvar_vaddr="other_heap_base"/> -->
+    <protection_domain name="example_client" pp="true" priority="101">
+        <map mr="client_heap" vaddr="0x20000000" perms="rw" cached="false" setvar_vaddr="__heap_start"/>
+        <map mr="client_heap_end" vaddr="0x22000000" perms="rw" cached="false" setvar_vaddr="__heap_end"/>
         <map mr="shared_heap" vaddr="0x5_a00_000" perms="rw" cached="false" setvar_vaddr="shared_heap"/>
         <map mr="shared_soft_heap" vaddr="0x5_800_000" perms="rw" cached="false" setvar_vaddr="shared_soft_heap"/>
-        <map mr="kbd_buffer" vaddr="0x60000000" perms="rw" cached="false" setvar_vaddr="kbd_buffer"/>
 
         <!-- shared memory for ring buffer mechanism -->
         <map mr="kbd_free" vaddr="0x4_000_000" perms="rw" cached="true" setvar_vaddr="kbd_free" />
@@ -222,14 +226,7 @@
         <map mr="uts_free" vaddr="0x5_400_000" perms="rw" cached="true" setvar_vaddr="uts_free" />
         <map mr="uts_used" vaddr="0x5_600_000" perms="rw" cached="true" setvar_vaddr="uts_used" />
 
-        <program_image path="shell.elf" />
-    </protection_domain>
-
-    <protection_domain name="snake" pp="true" priority="100">
-        <map mr="snake_heap" vaddr="0x53000000" perms="rw" cached="false" setvar_vaddr="__heap_start"/>
-        <map mr="snake_heap_end" vaddr="0x55000000" perms="rw" cached="false" setvar_vaddr="__heap_end"/>
-        <map mr="kbd_buffer" vaddr="0x60000000" perms="rw" cached="false" setvar_vaddr="kbd_buffer"/>
-        <program_image path="snake.elf" />
+        <program_image path="example_client.elf" />
     </protection_domain>
 
     <!-- API calls:
@@ -244,42 +241,36 @@
     <!-- Driver initialise complete -->
     <channel>
         <end pd="xhci_stub" id="40"/>
-        <end pd="shell" id="40"/>
+        <end pd="example_client" id="40"/>
     </channel>
     <!-- USB Device Connect Event -->
     <channel>
         <end pd="xhci_stub" id="45"/>
-        <end pd="shell" id="45"/>
+        <end pd="example_client" id="45"/>
     </channel>
     <!-- Keyboard interrupt -->
     <channel>
         <end pd="software_interrupt" id="46"/>
-        <end pd="shell" id="46"/>
+        <end pd="example_client" id="46"/>
     </channel>
+    <!-- blank -->
     <channel>
         <end pd="xhci_stub" id="47"/>
-        <end pd="shell" id="47"/>
+        <end pd="example_client" id="47"/>
     </channel>
     <!-- Mouse interrupt -->
     <channel>
         <end pd="software_interrupt" id="48"/>
-        <end pd="shell" id="48"/>
+        <end pd="example_client" id="48"/>
     </channel>
     <!-- Touchscreen event -->
     <channel>
         <end pd="software_interrupt" id="49"/>
-        <end pd="shell" id="49"/>
+        <end pd="example_client" id="49"/>
     </channel>
     <!-- Umass xfer complete -->
     <channel>
         <end pd="software_interrupt" id="50"/>
-        <end pd="shell" id="50"/>
-    </channel>
-
-    <!-- Extra calls (not necessary) -->
-    <channel>
-        <!-- snake communication -->
-        <end pd="shell" id="10"/>
-        <end pd="snake" id="10"/>
+        <end pd="example_client" id="50"/>
     </channel>
 </system>
