@@ -192,7 +192,7 @@ init(void) {
                 break;
             } else if (offset < 0) {
                 if (offset == -FDT_ERR_NOTFOUND) {
-                    print_fatal("no dwc3 node at 0x%x. Exiting.\n", xhci_base);
+                    print_fatal("no dwc3 node at 0x%lx. Exiting.\n", xhci_base);
                     return;
                 }
             }
@@ -270,7 +270,7 @@ void handle_umass_xfer()
     void *cookie = NULL;
 
     int index;
-    while (!driver_dequeue(umass_buffer_ring->used_ring, (uintptr_t**)&buffer, &len, &cookie)) {
+    while (!driver_dequeue(umass_buffer_ring->used_ring, (uintptr_t*)&buffer, &len, &cookie)) {
         struct umass_request* xfer = (struct umass_request*)buffer; 
 
         if (xfer->read) {

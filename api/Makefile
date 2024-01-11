@@ -42,7 +42,6 @@ $(BUILD_DIR)/%.o: $(SEL4_XHCI_PATH)/api/utils/%.c Makefile
 $(BUILD_DIR)/%.o: $(SEL4_XHCI_PATH)/api/include/printf/%.c Makefile
 	$(CC_BSD) -c $(CFLAGS) $< -o $@
 
-
 $(BUILD_DIR)/%.o: $(SEL4_XHCI_PATH)/api/include/shared_ringbuffer/%.c Makefile
 	$(CC_BSD) -c $(CFLAGS) $< -o $@
 
