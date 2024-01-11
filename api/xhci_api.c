@@ -129,10 +129,8 @@ void handle_xfer_complete()
         dev->umass_dev->active_xfer = NULL;
         dev->umass_dev->locked = false;
 
-        // if ring is not empty, do next xfer
-        if (!ring_empty(dev->umass_dev->api_request_ring)) {
-            execute_next(dev);
-        }
+        // do next xfer
+        execute_next(dev);
     }
 }
 

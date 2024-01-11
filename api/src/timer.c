@@ -12,14 +12,13 @@
  * to implement the timing functions expected by the U-Boot codebase */
 
 #include <stdint.h>
-#include <printf.h>
+#include <stdio.h>
 #include <timer.h>
 #include <sys/bus.h>
 #include <sys/device.h>
 #include <sys/device_impl.h>
 #include <sys/intr.h>
 #include <sys/kernel.h>
-#include <sys/kmem.h>
 #include <timer.h>
 
 #include <dev/usb/usb.h>
@@ -34,6 +33,7 @@
 #include <sel4_bus_funcs.h>
 #include <microkit.h>
 
+// #define TIMER_DEBUG
 #ifdef TIMER_DEBUG
 #define timer_print(...) printf(__VA_ARGS__)
 #else

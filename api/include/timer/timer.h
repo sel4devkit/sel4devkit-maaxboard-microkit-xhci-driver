@@ -1,6 +1,5 @@
 /* This work is Crown Copyright NCSC, 2023. */
 #include <stdint.h>
-#include <printf.h>
 #include <sys/bus.h>
 
 void initialise_and_start_timer(uintptr_t);

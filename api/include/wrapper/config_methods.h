@@ -1,13 +1,11 @@
 /* This work is Crown Copyright NCSC, 2023. */
 #include <microkit.h>
-#include <printf.h>
 
 #include <machine/bus_funcs.h>
 
 #include <dev/usb/xhcivar.h>
 
 #include <wrapper.h>
-#include <tinyalloc.h>
 #include <dma.h>
 #include <sys/bus.h>
 #include <sys/device.h>

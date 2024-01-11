@@ -1,10 +1,10 @@
-#include <printf.h>
+#include <stdio.h>
 
 char *pd_name;
 // #define PD_DEBUG
 
 #ifdef PD_DEBUG
-#define print_debug(...) printf("%s|DEBUG: ", pd_name); printf(__VA_ARGS__)
+#define print_debug(...) printf("%s|DEBUG: ", pd_name); printf(__VA_ARGS__);
 #else
 #define print_debug(...)
 #endif
