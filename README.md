@@ -26,7 +26,6 @@ Specifically, we have provided support for these USB devices:
         - `clean`: remove all object files
         - `rebuild`: remove all object files and build from scratch
 - `Makefile`: to be used via `build.sh`. Builds system.
-- `xhci_stub.system`: microkit system description file.
 
 ## Requirements
 - This driver expects to have the accompanying NetBSD fork.
