@@ -28,9 +28,6 @@ endif
 # specify CPU
 CPU := cortex-a53
 
-# build api images
-include api/Makefile
-
 # EXAMPLE EMPTY API USER
 
 TOOLCHAIN_CLI := aarch64-none-elf
