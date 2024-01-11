@@ -78,21 +78,20 @@ $(BUILD_DIR)/shell.elf: $(addprefix $(BUILD_DIR)/, $(SHELL_OBJS))
 $(BUILD_DIR)/snake.elf: $(addprefix $(BUILD_DIR)/, $(SNAKE_OBJS))
 	$(LD_CLIENT) $(CLIENT_LD_FLAGS) $^ $(LIBS_CLIENT) -o $@
 
-# Build complete system
-IMAGE_FILE = $(BUILD_DIR)/loader.img
-REPORT_FILE = $(BUILD_DIR)/report.txt
-
-# step 6: add elf file to list of images
+# step 8: add elf file to list of images
 # Use $(API_IMAGES) to reference driver required elfs
 IMAGES := $(API_IMAGES) shell.elf snake.elf
 
 
-# step 7: build entire system
+# step 9: build entire system
+IMAGE_FILE = $(BUILD_DIR)/loader.img
+REPORT_FILE = $(BUILD_DIR)/report.txt
+
 all: $(IMAGE_FILE)
 $(IMAGE_FILE) $(REPORT_FILE): $(addprefix $(BUILD_DIR)/, $(IMAGES)) examples/shell/shell.system
 	$(MICROKIT_TOOL) examples/shell/shell.system --search-path $(BUILD_DIR) --board $(MICROKIT_BOARD) --config $(MICROKIT_CONFIG) -o $(IMAGE_FILE) -r $(REPORT_FILE)
 
-# step 8: (optional) clean
+# step 10: (optional) clean
 clean:
 	rm -f $(BUILD_DIR)/*.o $(BUILD_DIR)/*.elf $(BUILD_DIR)/.depend* $(BUILD_DIR)/*.d
 	find . -name \*.o |xargs --no-run-if-empty rm
