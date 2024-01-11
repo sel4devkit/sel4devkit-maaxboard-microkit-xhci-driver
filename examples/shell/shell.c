@@ -1,11 +1,11 @@
 /* This work is Crown Copyright NCSC, 2023. */
 #include <microkit.h>
-#include <shared_ringbuffer.h>
+#include <shared_ringbuffer/shared_ringbuffer.h>
 #include <xhci_api.h>
 #include <shell.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <pdprint.h>
+#include <printf/pdprint.h>
 #include <string.h>
 
 // snake globals
