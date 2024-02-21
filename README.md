@@ -22,9 +22,11 @@ Specifically, we have provided support for these USB devices:
     - Specify example with `-e`. Examples:
         - empty-client: Simple client that prints out list of connected (and supported) devices.
         - shell: More advanced example shell, demonstrates exensive use of driver and API.
-    - Build options:
-        - `clean`: remove all object files
-        - `rebuild`: remove all object files and build from scratch
+    - Build flags:
+        - `-c` clean: remove all object files
+        - `-r` rebuild: remove all object files and build from scratch,
+        - `-d` debug: enable extensive xhci debug print statements (as per standard netbsd logging output)
+            - TODO: add logging levels to fine tune output    
 - `Makefile`: to be used via `build.sh`. Builds system.
 
 ## Requirements
