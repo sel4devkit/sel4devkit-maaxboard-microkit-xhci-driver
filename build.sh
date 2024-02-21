@@ -19,22 +19,33 @@ mkdir -p $BUILD_DIR
 examples=( "shell" "empty-client" )
 
 print_examples() {
-    echo "available examples:"
+    echo "EXAMPLES:"
     for e in ${examples[@]}; do
         echo "  $e"
     done
 }
 
 print_usage() {
-    echo "usage: ./build.sh -e [example] [clean|rebuild]"
+    echo "usage: ./build.sh [OPTION] -e [EXAMPLE]"
+    echo
+    echo "OPTIONS:"
+    echo "  -r rebuild"
+    echo "      rebuild all files (use when modifying headers or en/disabling debug)"
+    echo "  -c clean"
+    echo "      remove build files"
+    echo "  -d debug"
+    echo "      enable debugging output"
     echo
     print_examples
     exit 1
 }
 
-while getopts 'e:' flag; do
+while getopts 'e:rcd' flag; do
   case "${flag}" in
     e) export EXAMPLE="${OPTARG}" ;;
+    r) rebuild="true" ;;
+    c) clean="true" ;;
+    d) export SEL4_USB_DEBUG="true" ;;
     *) print_usage ;;
   esac
 done
@@ -53,9 +64,9 @@ if [[ ! " ${examples[*]} " =~ [[:space:]]${EXAMPLE}[[:space:]] ]]; then
     exit 1
 fi
 
-if [ "$opt" = "clean" ] | [ "$opt" = "c" ]; then
+if [ "$clean" = "true" ] ; then
     make -C $SEL4_XHCI_PATH clean
-elif [ "$opt" = "rebuild" ] | [ "$opt" = "r" ]; then
+elif [ "$rebuild" = "true" ]; then
     make -C $SEL4_XHCI_PATH clean
     make -C $SEL4_XHCI_PATH
 else

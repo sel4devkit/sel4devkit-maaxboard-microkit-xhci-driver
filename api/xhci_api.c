@@ -135,18 +135,10 @@ void handle_xfer_complete()
 }
 
 void setup_mass_storage(struct sel4_usb_device* dev) {
-    struct sel4_umass_device* new_umass_dev = malloc(sizeof(struct sel4_umass_device));
-
-    new_umass_dev->api_request_ring = malloc(sizeof(ring_buffer_t));
+    dev->umass_dev->api_request_ring = malloc(sizeof(ring_buffer_t));
     ring_buffer_t *free_ring = (ring_buffer_t*) calloc(1,0x200000);
     ring_buffer_t *used_ring = (ring_buffer_t*) calloc(1,0x200000);
-    ring_init(new_umass_dev->api_request_ring, free_ring, free_ring, NULL, 1);
-
-    new_umass_dev->umass_id = umass_id++;
-    new_umass_dev->locked = false;
-    new_umass_dev->active_xfer = NULL;
-
-    dev->umass_dev = new_umass_dev;
+    ring_init(dev->umass_dev->api_request_ring, free_ring, free_ring, NULL, 1);
 }
 
 void
@@ -228,6 +220,13 @@ void print_device(int id)
         printf("    - Class: %s\n", get_class(dev->ifaceClass));
     }
     printf(" - Depth: %d\n", dev->depth);
+    if (dev->class == 0) {
+        if (dev->ifaceClass == 0x08) {
+            printf(" - Mass storage info\n");
+            printf("    - umass id %d: %llu (blocks)\n", dev->umass_dev->umass_id, dev->umass_dev->size*dev->umass_dev->blocksize);
+		    printf("    - %d cyl, %d head, %d blocks, %llu blk size\n", dev->umass_dev->cylinders, dev->umass_dev->heads, dev->umass_dev->blocks, dev->umass_dev->blocksize);
+        }
+    }
 }
 
 void print_devs()
