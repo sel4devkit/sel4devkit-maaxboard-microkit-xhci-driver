@@ -4,7 +4,7 @@ CC_BSD      := $(TOOLCHAIN)-gcc
 LD_BSD      := $(TOOLCHAIN)-ld
 AS_BSD      := $(TOOLCHAIN)-as
 
-NETBSD_SRC	:= dev_verbose.o subr_device.o subr_autoconf.o usbdi_util.o usbdi.o usbroothub.o sel4_bus_funcs.o dma.o usb.o usb_quirks.o usb_subr.o xhci.o usb_mem.o uhub.o hid.o uhidev.o ukbd.o ums.o uts.o hidms.o hidkbdmap.o ioconf.o tpcalib.o uhid.o umass.o umass_quirks.o umass_scsipi.o scsipi_base.o scsipiconf.o scsiconf.o scsi_base.o scsi_subr.o scsipi_ioctl.o heapsort.o strnvisx.o sd.o dksubr.o subr_disk.o  hexdump.o fdt_openfirm.o fdt_phy.o fdt_subr.o strlist.o ofw_subr.o pmatch.o fdt_reset.o
+NETBSD_SRC	:= dev_verbose.o subr_device.o subr_autoconf.o usbdi_util.o usbdi.o usbroothub.o sel4_bus_funcs.o dma.o usb.o usb_quirks.o usb_subr.o xhci.o usb_mem.o uhub.o hid.o uhidev.o ukbd.o ums.o uts.o hidms.o hidkbdmap.o ioconf.o tpcalib.o uhid.o umass.o umass_quirks.o umass_scsipi.o scsipi_base.o scsipiconf.o scsiconf.o scsi_base.o scsi_subr.o scsipi_ioctl.o heapsort.o strnvisx.o sd.o dksubr.o subr_disk.o  hexdump.o fdt_openfirm.o fdt_phy.o fdt_subr.o strlist.o ofw_subr.o pmatch.o fdt_reset.o subr_humanize.o
 FDT_SRC		:= fdt.o fdt_addresses.o fdt_empty_tree.o fdt_ro.o fdt_rw.o fdt_strerror.o fdt_sw.o fdt_wip.o
 UTILS		:= timer.o
 
@@ -15,8 +15,11 @@ MEM_OBJS		:=  mem_handler.o
 
 INC 		:= $(BOARD_DIR)/include api/include/shared_ringbuffer api/include api/include/wrapper $(NETBSD_DIR)/sys $(NETBSD_DIR)/sys/external/bsd/libfdt/dist $(NETBSD_DIR)/mach_include api/include/bus api/include/dma api/include/printf api/include/timer api/utils/
 INC_PARAMS	=$(foreach d, $(INC), -I$d)
-WARNINGS 	:= -Wall -Wno-comment -Wno-return-type -Wno-unused-function -Wno-unused-value -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-pointer-sign
-CFLAGS 		:= -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 $(WARNINGS) --specs=libc/picolibc.specs $(INC_PARAMS)  -DSEL4 # -DSEL4_USB_DEBUG
+WARNINGS 	:= -Wall -Wno-comment -Wno-return-type -Wno-unused-function -Wno-unused-value -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-pointer-sign -Wno-format
+CFLAGS 		:= -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 $(WARNINGS) --specs=libc/picolibc.specs $(INC_PARAMS) -DSEL4 
+ifneq ($(strip $(SEL4_USB_DEBUG)),)
+CFLAGS := $(CFLAGS) -DSEL4_USB_DEBUG
+endif
 LD_BSDFLAGS := -L$(BOARD_DIR)/lib 
 LIBS_BSD 	:= libc/libgcc.a libc/libc.a libc/libm.a libc/libgcc.a -lmicrokit -Tmicrokit.ld
 
@@ -172,8 +175,8 @@ $(BUILD_DIR)/subr_device.o: $(NETBSD_DIR)/sys/kern/subr_device.c Makefile
 $(BUILD_DIR)/subr_disk.o: $(NETBSD_DIR)/sys/kern/subr_disk.c Makefile
 	$(CC_BSD) -c $(CFLAGS) $< -o $@
 
-# $(BUILD_DIR)/subr_humanize.o: $(NETBSD_DIR)/sys/kern/subr_humanize.c Makefile
-# 	$(CC_BSD) -c $(CFLAGS) $< -o $@
+$(BUILD_DIR)/subr_humanize.o: $(NETBSD_DIR)/sys/kern/subr_humanize.c Makefile
+	$(CC_BSD) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/kern_pmf.o: $(NETBSD_DIR)/sys/kern/kern_pmf.c Makefile
 	$(CC_BSD) -c $(CFLAGS) $< -o $@
