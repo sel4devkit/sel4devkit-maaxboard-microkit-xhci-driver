@@ -31,7 +31,7 @@ Specifically, we have provided support for these USB devices:
 
 ## Requirements
 - This driver expects to have the accompanying NetBSD fork.
-  - TEMP NOTE: use branch 'api' for netbsd
+  - Use branch 'api' for netbsd
 - This driver assumes the existence of a built microkit sdk.
 - This driver assumes a pre-built microkit libc (found in this [repository](https://github.com/sel4-cap/picolibc/tree/linker_crt))
     - Use branch linker_crt
@@ -110,6 +110,16 @@ Interrupt generated on new device connection. To allow the API to handle this ne
 - umass_dev: mass storage specific information
     - umass_id: mass storage specific id
     - locked: mutex to ensure only one process can occur at a given time
+- (sddf mass storage spec)
+    - serial_number
+    - read_only
+    - ready
+    - blocksize
+    - queue_depth
+    - cylinders
+    - heads
+    - blocks
+    - size
 
 The hex codes for vendor and product can be used to look up device specific information in the USB-IF database.
 
