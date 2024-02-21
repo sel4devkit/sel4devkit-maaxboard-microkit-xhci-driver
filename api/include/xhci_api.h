@@ -43,6 +43,15 @@ struct sel4_umass_device {
     bool locked;                        /* mutex */
     struct umass_request* active_xfer;  /* currently executing xfer */
     ring_handle_t *api_request_ring;    /* xfer queue */
+
+    /* UNSW sDDF specs */
+    char serial_number[64];
+    bool read_only;
+    bool ready;
+    uint16_t blocksize;
+    uint16_t queue_depth;
+    uint16_t cylinders, heads, blocks; /* geometry to guide FS layout */
+    uint64_t size; /* number of blocksize units */
 };
 
 struct sel4_usb_device {
