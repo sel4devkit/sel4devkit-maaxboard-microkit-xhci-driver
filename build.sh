@@ -10,7 +10,7 @@ export BOARD_DIR="$MICROKIT_SDK/board/$MICROKIT_BOARD/$MICROKIT_CONFIG"
 export PYTHONPATH="$MICROKIT_DIR/tool"
 export PATH="$MICROKIT_DIR/../compiler/bin:$PATH"
 
-export SEL4_XHCI_PATH=$MICROKIT_DIR/example/maaxboard/xhci_stub
+export SEL4_XHCI_PATH=$( dirname -- "$( readlink -f -- "$0"; )"; )
 export BUILD_DIR=$SEL4_XHCI_PATH/xhci_build
 export NETBSD_DIR="$SEL4_XHCI_PATH/netbsd/src"
 
