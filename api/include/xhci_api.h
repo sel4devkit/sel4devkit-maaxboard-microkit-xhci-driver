@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <shared_ringbuffer/shared_ringbuffer.h>
+#include <sddf/blk/shared_queue.h>
 
 //USB definitions (from netbsd usb.h)
 #define USB_SPEED_LOW           1
@@ -44,20 +45,14 @@ struct sel4_umass_device {
     struct umass_request* active_xfer;  /* currently executing xfer */
     ring_handle_t *api_request_ring;    /* xfer queue */
 
-    /* UNSW sDDF specs */
-    char serial_number[64];
-    bool read_only;
-    bool ready;
-    uint16_t blocksize;
-    uint16_t queue_depth;
-    uint16_t cylinders, heads, blocks; /* geometry to guide FS layout */
-    uint64_t size; /* number of blocksize units */
+    blk_storage_info_t dev_info;
 };
 
 struct sel4_usb_device {
     int id;                                 /* device id */
     char* vendor;                           /* vendor string */
     char* product;                          /* product string */
+    char* serial;                           /* product serial */
     int vendorid;                           /* vendor hex code */
     int productid;                          /* product hex code */
     int class;                              /* class of device (if 0, check interface) */
@@ -117,5 +112,10 @@ void print_device(int dev_id);
  * Print all devices to debug
 */
 void print_devs();
+
+/**
+ * Get blocksize of device (returns -1 if not mass storage dev)
+*/
+int get_blksize(int);
 
 #endif /* XHCI_API */

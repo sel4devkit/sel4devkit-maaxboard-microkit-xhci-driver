@@ -61,7 +61,7 @@ int enqueue_umass_request(int dev_id, bool read, int blkno, int nblks, void* val
     int xfer_id = ++current_xfer;
     struct sel4_usb_device *dev = usb_devices[dev_id];
     if (!(dev->class == 0 && dev->ifaceClass == 0x8)) {
-        printf("Device is not a mass storage device\n");
+        printf("Device %d is not a mass storage device\n", dev_id);
         return -1;
     }
 
@@ -134,6 +134,14 @@ void handle_xfer_complete()
     }
 }
 
+int get_blksize(int dev_id) {
+    struct sel4_usb_device* dev = usb_devices[dev_id];
+    if (dev->class == 0)
+        if (dev->ifaceClass == 0x8)
+            return dev->umass_dev->dev_info.blocksize;
+    return -1;
+}
+
 void setup_mass_storage(struct sel4_usb_device* dev) {
     dev->umass_dev->api_request_ring = malloc(sizeof(ring_buffer_t));
     ring_buffer_t *free_ring = (ring_buffer_t*) calloc(1,0x200000);
@@ -163,7 +171,7 @@ char* get_class(int class) {
         case 0: 
             return "Device";
         case 1: 
-            return "audio";
+            return "Audio";
         case 2: 
             return "CDC";
         case 3: 
@@ -223,8 +231,8 @@ void print_device(int id)
     if (dev->class == 0) {
         if (dev->ifaceClass == 0x08) {
             printf(" - Mass storage info\n");
-            printf("    - umass id %d: %llu (blocks)\n", dev->umass_dev->umass_id, dev->umass_dev->size*dev->umass_dev->blocksize);
-		    printf("    - %d cyl, %d head, %d blocks, %llu blk size\n", dev->umass_dev->cylinders, dev->umass_dev->heads, dev->umass_dev->blocks, dev->umass_dev->blocksize);
+            printf("    - umass id %d (serial %s): %llu (blocks) \n", dev->umass_dev->umass_id, dev->umass_dev->dev_info.serial_number, dev->umass_dev->dev_info.size*dev->umass_dev->dev_info.blocksize);
+		    printf("    - %d cyl, %d head, %d blocks, %llu blk size\n", dev->umass_dev->dev_info.cylinders, dev->umass_dev->dev_info.heads, dev->umass_dev->dev_info.blocks, dev->umass_dev->dev_info.blocksize);
         }
     }
 }

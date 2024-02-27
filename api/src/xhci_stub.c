@@ -263,6 +263,11 @@ init(void) {
 	microkit_notify(INIT); //notify client xhci is up and running
 }
 
+#define HEXDUMP(a, b, c) \
+    do { \
+		hexdump(printf, a, b, c); \
+    } while (/*CONSTCOND*/0)
+
 void handle_umass_xfer()
 {
     uintptr_t *buffer = 0;
@@ -278,6 +283,7 @@ void handle_umass_xfer()
             read_block(xfer->umass_id, xfer->blkno, xfer->nblks, xfer->val);
         } else {
             printf("calling write_block: n: %i    s: %i\n", xfer->nblks, xfer->blkno);
+            HEXDUMP("write", xfer->val, (512 * xfer->nblks));
             write_block(xfer->umass_id, xfer->blkno, xfer->nblks, xfer->val);
         }
     }

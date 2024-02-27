@@ -40,7 +40,7 @@ LIBS_CLIENT := libc/libgcc.a libc/libc.a libc/libm.a libc/libgcc.a -lmicrokit -T
 # step 1: declare includes
 # all of these includes are required for compilation of api
 # feel free to add more here
-CLIENT_INC := $(BOARD_DIR)/include api/include examples/shell/ examples/shell/games
+CLIENT_INC := $(BOARD_DIR)/include api/include api/sDDF/include examples/shell/ examples/shell/games
 CLIENT_INC_PARAMS=$(foreach d, $(CLIENT_INC), -I$d)
 
 # step 2: declare compilation flags

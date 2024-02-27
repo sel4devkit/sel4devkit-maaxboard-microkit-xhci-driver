@@ -4,22 +4,24 @@ CC_BSD      := $(TOOLCHAIN)-gcc
 LD_BSD      := $(TOOLCHAIN)-ld
 AS_BSD      := $(TOOLCHAIN)-as
 
-NETBSD_SRC	:= dev_verbose.o subr_device.o subr_autoconf.o usbdi_util.o usbdi.o usbroothub.o sel4_bus_funcs.o dma.o usb.o usb_quirks.o usb_subr.o xhci.o usb_mem.o uhub.o hid.o uhidev.o ukbd.o ums.o uts.o hidms.o hidkbdmap.o ioconf.o tpcalib.o uhid.o umass.o umass_quirks.o umass_scsipi.o scsipi_base.o scsipiconf.o scsiconf.o scsi_base.o scsi_subr.o scsipi_ioctl.o heapsort.o strnvisx.o sd.o dksubr.o subr_disk.o  hexdump.o fdt_openfirm.o fdt_phy.o fdt_subr.o strlist.o ofw_subr.o pmatch.o fdt_reset.o subr_humanize.o
+NETBSD_SRC	:= dev_verbose.o subr_device.o subr_autoconf.o usbdi_util.o usbdi.o usbroothub.o sel4_bus_funcs.o dma.o usb.o usb_quirks.o usb_subr.o xhci.o usb_mem.o uhub.o hid.o uhidev.o ukbd.o ums.o uts.o hidms.o hidkbdmap.o ioconf.o tpcalib.o uhid.o umass.o umass_quirks.o umass_scsipi.o scsipi_base.o scsipiconf.o scsiconf.o scsi_base.o scsi_subr.o scsipi_ioctl.o heapsort.o strnvisx.o sd.o dksubr.o subr_disk.o  hexdump.o fdt_openfirm.o fdt_phy.o fdt_subr.o strlist.o ofw_subr.o pmatch.o fdt_reset.o subr_humanize.o 
 FDT_SRC		:= fdt.o fdt_addresses.o fdt_empty_tree.o fdt_ro.o fdt_rw.o fdt_strerror.o fdt_sw.o fdt_wip.o
 UTILS		:= timer.o
 
 XHCI_STUB_OBJS 	:=  xhci_stub.o $(NETBSD_SRC) $(FDT_SRC) imx8mq_usbphy.o dwc3_fdt.o shared_ringbuffer.o $(UTILS)
 SOFTWARE_OBJS 	:=  software_interrupts.o $(NETBSD_SRC) $(FDT_SRC) imx8mq_usbphy.o dwc3_fdt.o $(UTILS) shared_ringbuffer.o
-HARDWARE_OBJS 	:=  hardware_interrupts.o sel4_bus_funcs.o $(UTILS)
+HARDWARE_OBJS 	:=  hardware_interrupts.o sel4_bus_funcs.o $(UTILS) 
 MEM_OBJS		:=  mem_handler.o 
 
-INC 		:= $(BOARD_DIR)/include api/include/shared_ringbuffer api/include api/include/wrapper $(NETBSD_DIR)/sys $(NETBSD_DIR)/sys/external/bsd/libfdt/dist $(NETBSD_DIR)/mach_include api/include/bus api/include/dma api/include/printf api/include/timer api/utils/
+INC 		:= $(BOARD_DIR)/include api/sDDF/include api/include/shared_ringbuffer api/include api/include/wrapper $(NETBSD_DIR)/sys $(NETBSD_DIR)/sys/external/bsd/libfdt/dist $(NETBSD_DIR)/mach_include api/include/bus api/include/dma api/include/printf api/include/timer api/utils/
 INC_PARAMS	=$(foreach d, $(INC), -I$d)
 WARNINGS 	:= -Wall -Wno-comment -Wno-return-type -Wno-unused-function -Wno-unused-value -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-pointer-sign -Wno-format
 CFLAGS 		:= -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 $(WARNINGS) --specs=libc/picolibc.specs $(INC_PARAMS) -DSEL4 
+
 ifneq ($(strip $(SEL4_USB_DEBUG)),)
 CFLAGS := $(CFLAGS) -DSEL4_USB_DEBUG
 endif
+
 LD_BSDFLAGS := -L$(BOARD_DIR)/lib 
 LIBS_BSD 	:= libc/libgcc.a libc/libc.a libc/libm.a libc/libgcc.a -lmicrokit -Tmicrokit.ld
 
@@ -34,7 +36,7 @@ machine:
 	@mkdir -p $(NETBSD_DIR)/mach_include/arm
 	@ln -fs $(NETBSD_DIR)/sys/arch/arm/include/* $(NETBSD_DIR)/mach_include/arm/
 	@mkdir -p $(NETBSD_DIR)/mach_include/aarch64
-	@ln -fs $(NETBSD_DIR)/sys/arch/arm/include/* $(NETBSD_DIR)/mach_include/aarch64/
+	@ln -fs $(NETBSD_DIR)/sys/arch/aarch64/include/* $(NETBSD_DIR)/mach_include/aarch64/
 
 $(BUILD_DIR)/%.o: $(NETBSD_DIR)/sys/external/bsd/libfdt/dist/%.c Makefile
 	$(CC_BSD) -c $(CFLAGS) $< -o $@
@@ -200,6 +202,9 @@ $(BUILD_DIR)/imx8mq_usbphy.o: $(NETBSD_DIR)/sys/arch/arm/nxp/imx8mq_usbphy.c Mak
 	$(CC_BSD) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/tpcalib.o: $(NETBSD_DIR)/sys/dev/wscons/tpcalib.c Makefile
+	$(CC_BSD) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/bswap64.o: $(NETBSD_DIR)/sys/sys/bswap64.c Makefile
 	$(CC_BSD) -c $(CFLAGS) $< -o $@
 	
 $(BUILD_DIR)/%.o: %.s Makefile

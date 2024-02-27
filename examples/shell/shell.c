@@ -170,8 +170,13 @@ decode_command() {
             } else {
                 int blkno = atoi(parsedArgs[2]);
                 int nblks = atoi(parsedArgs[3]);
-                char* val = malloc((SECTOR_SIZE * nblks));
-                enqueue_umass_request(atoi(parsedArgs[1]), true, blkno, nblks, val, &print_blocks);
+                int blksize = get_blksize(atoi(parsedArgs[1]));
+                if (blksize > 0) {
+                    char* val = malloc((blksize * nblks));
+                    enqueue_umass_request(atoi(parsedArgs[1]), true, blkno, nblks, val, &print_blocks);
+                } else {
+                    printf("Device %d not mass storage\n", atoi(parsedArgs[1]));
+                }
             }
         } else if (!strcmp(parsedArgs[0], "write")) {
             // catch invalid arguments
@@ -182,10 +187,15 @@ decode_command() {
             } else {
                 int blkno = atoi(parsedArgs[2]);
                 int nblks = atoi(parsedArgs[3]);
-                char* val = malloc((SECTOR_SIZE * nblks));
-                printf("%p val\n", val);
-                strncpy(val, parsedArgs[4], strlen(parsedArgs[4]));
-                enqueue_umass_request(atoi(parsedArgs[1]), false, blkno, nblks, val, &write_complete);
+                int blksize = get_blksize(atoi(parsedArgs[1]));
+                if (blksize > 0) {
+                    char* val = malloc((blksize * nblks));
+                    printf("size of write %d\n", blksize*nblks);
+                    strncpy(val, parsedArgs[4], strlen(parsedArgs[4]));
+                    enqueue_umass_request(atoi(parsedArgs[1]), false, blkno, nblks, val, &write_complete);
+                } else {
+                    printf("Device %d not mass storage\n", atoi(parsedArgs[1]));
+                }
             }
         } else if (!strcmp(parsedArgs[0], "kbdtest")) {
             printf("\n");
