@@ -52,19 +52,19 @@ void api_init(ring_handle_t **kbd, ring_handle_t **mse, ring_handle_t **uts, rin
     umass_used = (uintptr_t) malloc(0x200000);
     ring_init(api_request_ring, (ring_buffer_t *)umass_free, (ring_buffer_t *)umass_used, NULL, 1);
 
-    // New deivce event ring
+    // New device event ring
     usb_new_device_ring = malloc(sizeof(*usb_new_device_ring));
     ring_init(usb_new_device_ring, (ring_buffer_t *)usb_new_device_free, (ring_buffer_t *)usb_new_device_used, NULL, 0);
 }
 
 int enqueue_umass_request(int dev_id, bool read, int blkno, int nblks, void* val, void* cb) {
-    int xfer_id = ++current_xfer;
     struct sel4_usb_device *dev = usb_devices[dev_id];
     if (!(dev->class == 0 && dev->ifaceClass == 0x8)) {
         printf("Device %d is not a mass storage device\n", dev_id);
         return -1;
     }
 
+    int xfer_id = ++current_xfer;
     struct umass_request* umass_xfer = malloc(sizeof(struct umass_request));
 
     umass_xfer->dev_id = dev->id;
@@ -72,6 +72,7 @@ int enqueue_umass_request(int dev_id, bool read, int blkno, int nblks, void* val
     umass_xfer->read = read;
     umass_xfer->blkno = blkno;
     umass_xfer->nblks = nblks;
+    umass_xfer->complete = false;
     umass_xfer->val = val;
     umass_xfer->cb = cb;
     umass_xfer->xfer_id = xfer_id;
@@ -80,11 +81,18 @@ int enqueue_umass_request(int dev_id, bool read, int blkno, int nblks, void* val
 
     // ensure reads and writes are executed in the order they arrived
     if (!dev->umass_dev->locked) {
-        dev->umass_dev->locked = true;
-        return execute_next(dev);
+        // dev->umass_dev->locked = true;
+        execute_next(dev);
+        while (!umass_xfer->complete) {
+            seL4_Yield();
+        }
+        handle_xfer_complete();
+        return 1;
     } else {
         printf("device busy\n");
     }
+
+
 
     return xfer_id;
 }
@@ -97,7 +105,7 @@ int execute_next(struct sel4_usb_device* dev) {
     int index;
     if (!driver_dequeue(dev->umass_dev->api_request_ring->used_ring, (uintptr_t*)&buffer, &len, &cookie)) {
         struct umass_request* xfer = (struct umass_request*)buffer; 
-        printf("xfer_id: %i    blkno: %i    nblks: %i\n", xfer->xfer_id, xfer->blkno, xfer->nblks);
+        // printf("xfer_id: %i    blkno: %i    nblks: %i\n", xfer->xfer_id, xfer->blkno, xfer->nblks);
         dev->umass_dev->active_xfer = xfer;
 
         bool empty = ring_empty(umass_buffer_ring->used_ring);
@@ -120,17 +128,17 @@ void handle_xfer_complete()
     unsigned int len = 0;
     void *cookie = NULL;
     if(!driver_dequeue(umass_buffer_ring->free_ring, (uintptr_t*)&buffer, &len, &cookie)) {
-        printf("dequeue %d\n", (int)*buffer);
         struct sel4_usb_device* dev = usb_devices[(int)*buffer];
         // do callback
-        if (dev->umass_dev->active_xfer->cb)
-            (dev->umass_dev->active_xfer->cb)(dev->umass_dev->active_xfer);
+        // if (dev->umass_dev->active_xfer->cb)
+        //     (dev->umass_dev->active_xfer->cb)(dev->umass_dev->active_xfer);
+
 
         dev->umass_dev->active_xfer = NULL;
         dev->umass_dev->locked = false;
 
         // do next xfer
-        execute_next(dev);
+        /* execute_next(dev); */
     }
 }
 
