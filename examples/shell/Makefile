@@ -40,7 +40,7 @@ LIBS_CLIENT := libc/libgcc.a libc/libc.a libc/libm.a libc/libgcc.a -lmicrokit -T
 # step 1: declare includes
 # all of these includes are required for compilation of api
 # feel free to add more here
-CLIENT_INC := $(BOARD_DIR)/include api/include api/sDDF/include examples/shell/ examples/shell/games
+CLIENT_INC := $(BOARD_DIR)/include api/include api/sDDF/include examples/shell/ examples/shell/games api/fatfs/source
 CLIENT_INC_PARAMS=$(foreach d, $(CLIENT_INC), -I$d)
 
 # step 2: declare compilation flags
@@ -63,10 +63,15 @@ $(BUILD_DIR)/%.o: examples/shell/%.c Makefile
 $(BUILD_DIR)/%.o: examples/shell/games/%.c Makefile
 	$(CC_CLIENT) -c $(CLIENT_CFLAGS) $< -o $@
 
+# build fatfs
+$(BUILD_DIR)/%.o: api/fatfs/source/%.c Makefile
+	$(CC_CLIENT) -c $(CLIENT_CFLAGS) $< -o $@
+
 # step 6: declare files to include in elf file
 # required files here are shared_ringbuffer and xhci_api. hidkbd map is a helper
 # file for decoding keypresses
-SHELL_OBJS 			:=  shell.o hidkbdmap.o shared_ringbuffer.o xhci_api.o hexdump.o
+FATFS_OBJS			:= 	ff.o ffunicode.o diskio.o
+SHELL_OBJS 			:=  shell.o hidkbdmap.o shared_ringbuffer.o xhci_api.o hexdump.o $(FATFS_OBJS)
 SNAKE_OBJS 			:=  snake.o
 
 # step 7: compile elf

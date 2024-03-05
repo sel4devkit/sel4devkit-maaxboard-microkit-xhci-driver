@@ -15,13 +15,14 @@
 #define MAX_DEVICES 127
 
 // Channel IDs
-#define INIT                    40
 #define NEW_DEVICE_EVENT        45
 #define KEYBOARD_EVENT          46
 #define MOUSE_EVENT             48
 #define UMASS_COMPLETE          49
 #define TOUCHSCREEN_EVENT       50
+#define UMASS_COMPLETE_1        51
 
+#define INIT                    60
 
 struct umass_request;
 extern int num_devices;
@@ -35,6 +36,7 @@ struct umass_request{
     int blkno;      /* start block */
     int nblks;      /* num of blocks */
     void* val;      /* write value, or address for read return */
+    bool complete;  /* is xfer complete (for sync transfers) */
     umass_cb cb;    /* callback */
     int xfer_id;    /* xfer id */
 };

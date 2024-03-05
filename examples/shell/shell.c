@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <printf/pdprint.h>
 #include <string.h>
+#include <ff.h>
 
 // snake globals
 char* kbd_buffer;
@@ -71,6 +72,14 @@ init_shell() {
     print_splash_screen_2();
     console_state = CONSOLE;
     printf("\nseL4 test>>> ");
+    // char *test_cmd2 = "fatwrite newfile23.txt";
+    // strncpy(cmd, test_cmd2, strlen(test_cmd2));
+    // cursor_index = strlen(test_cmd2);
+    // decode_command();
+    char *test_cmd = "fatwrite newfile23.txt";
+    strncpy(cmd, test_cmd, strlen(test_cmd));
+    cursor_index = strlen(test_cmd);
+    decode_command();
 }
 
 // function for parsing command words 
@@ -111,6 +120,8 @@ void write_complete(struct umass_request *xfer) {
     reset_prompt();
 }
 
+FATFS *FatFs;
+
 void
 decode_command() {
     char *parsedArgs[ARGMAX];
@@ -122,6 +133,8 @@ decode_command() {
 
     if (cursor_index > 0) {
         cmd[cursor_index] = '\0';
+        char hist[100];
+        strncpy(hist, cmd, strlen(cmd));
         parseSpace(cmd, parsedArgs);
         if (!strcmp(parsedArgs[0], "init")) {
             init_shell();
@@ -142,10 +155,6 @@ decode_command() {
         } else if (!strcmp(parsedArgs[0], "mousetest")) {
             console_state = MOUSE_TEST;
             cmd_hist++;
-            history[cmd_hist] = malloc(sizeof(cmd));
-            strncpy(history[cmd_hist], cmd, strlen(cmd));
-            cmd_hist_cursor = cmd_hist+1;
-            memset(cmd, '\0', sizeof(cmd));
             printf("\n");
             cursor_index = 0;
             init_mousetest();
@@ -154,7 +163,7 @@ decode_command() {
             console_state = UTS_TEST;
             cmd_hist++;
             history[cmd_hist] = malloc(sizeof(cmd));
-            strncpy(history[cmd_hist], cmd, strlen(cmd));
+            strncpy(history[cmd_hist], hist, strlen(hist));
             cmd_hist_cursor = cmd_hist+1;
             memset(cmd, '\0', sizeof(cmd));
             printf("\n");
@@ -197,6 +206,84 @@ decode_command() {
                     printf("Device %d not mass storage\n", atoi(parsedArgs[1]));
                 }
             }
+        } else if (!strcmp(parsedArgs[0], "fatls")) {
+            printf("listing root dir\n");
+            FRESULT res;
+            DIR *dir = malloc(sizeof(DIR));
+            FILINFO *fno = malloc(sizeof(FILINFO));
+            int nfile, ndir;
+            char *path = parsedArgs[1];
+
+            res = f_opendir(dir, path);                       /* Open the directory */
+            if (res == FR_OK) {
+                nfile = ndir = 0;
+                for (;;) {
+                    res = f_readdir(dir, fno);                   /* Read a directory item */
+                    if (res != FR_OK || fno->fname[0] == 0) break;  /* Error or end of dir */
+                    if (fno->fattrib & AM_DIR) {            /* Directory */
+                        printf("   <DIR>   %s\n", fno->fname);
+                        ndir++;
+                    } else {                               /* File */
+                        printf("%10u %s\n", fno->fsize, fno->fname);
+                        nfile++;
+                    }
+                }
+                // closedir(dir);
+                printf("%d dirs, %d files.\n", ndir, nfile);
+            } else {
+                printf("Failed to open \"%s\". (%u)\n", path, res);
+            }
+        } else if (!strcmp(parsedArgs[0], "file")) {
+            char* fileName = parsedArgs[1];
+            printf("Trying to read file %s\n", fileName);
+            char *line = malloc(100);
+            FIL *fp = malloc(sizeof(FIL));
+            BYTE mode = FA_READ;
+            FRESULT fr;
+            fr = f_mount(FatFs, "2", 0);
+            if (fr)
+                printf("mount error %d\n", fr);
+            else {
+                fr = f_open (fp, fileName, mode);
+                if (fr) {
+                    printf("file error %d\n", fr);
+                } else {
+                    printf("======= SOF %s =======\n", fileName);
+                    /* ms_delay(1000); */
+                    while (f_gets(line, sizeof(char) * 100, fp)) {
+                        printf("%s", line);
+                    }
+
+                    f_close(fp);
+                    printf("======= EOF %s =======\n", fileName);
+                }
+            }
+        } else if (!strcmp(parsedArgs[0], "fatwrite")) {
+            FIL *file = malloc(sizeof(FIL));
+            UINT bw;
+            FRESULT fr;
+            BYTE mode = FA_WRITE | FA_CREATE_ALWAYS | FA_READ;
+
+            char *fileName = parsedArgs[1];
+            printf("writing to file '%s'\n", fileName);
+            char *teststr = "abc";
+            char *buffer = malloc(sizeof(char)*3);
+            printf("strncpy\n");
+            strncpy(buffer, teststr, strlen(teststr));
+            printf("mounting fatfs\n");
+            fr = f_mount(FatFs, "2", 0);
+            if (fr)
+                printf("mount error %d\n", fr);
+            printf("opening file\n");
+            fr = f_open(file, fileName, mode);
+            if (fr)
+                printf("file error open %d\n", fr);
+            printf("opened new file\n");
+            // fr = f_write(file, buffer, sizeof(char) * 3, &bw);
+            // if (fr)
+            //     printf("file error write %d\n", fr);
+            f_close(file);
+            // printf("wrote %d to file %s\n", bw, fileName);
         } else if (!strcmp(parsedArgs[0], "kbdtest")) {
             printf("\n");
             console_state = KEYBOARD_TEST;
@@ -216,8 +303,8 @@ decode_command() {
             printf("%s is not a recognised command!\n", parsedArgs[0]);
         }
         cmd_hist++;
-        history[cmd_hist] = malloc(sizeof(cmd));
-        strncpy(history[cmd_hist], cmd, strlen(cmd));
+        history[cmd_hist] = malloc(sizeof(hist));
+        strncpy(history[cmd_hist], hist, strlen(hist));
         cmd_hist_cursor = cmd_hist+1;
         memset(cmd, '\0', sizeof(cmd));
         printf("\n");
@@ -351,7 +438,7 @@ handle_keypress()
                         unique_id = temp_unique_id;
                 }
             }
-            keyPressed = ((char*)buffer)[unique_id];
+            keyPressed = (uint8_t)((char*)buffer)[unique_id];
 
             //update previous buffer
             keysDown[2] = ((char*)buffer)[2];
@@ -406,7 +493,7 @@ handle_keypress()
                         break;
                     default:
                         if (cursor_index < CMD_LIMIT) {
-                            if ((keypress >= KS_a && keypress <= KS_z) || (keypress >= KS_A && keypress <= KS_Z) || (keypress >= KS_0 && keypress <= KS_9) || keypress == KS_space) {
+                            if ((keypress >= KS_a && keypress <= KS_z) || (keypress >= KS_A && keypress <= KS_Z) || (keypress >= KS_0 && keypress <= KS_9) || (keypress >= KS_space && keypress <= KS_slash)) {
                                 printf("%c", keypress);
                                 cmd[cursor_index] = keypress;
                                 cursor_index++;
@@ -437,6 +524,7 @@ handle_keypress()
 void
 init(void) {
     api_init(&kbd_buffer_ring, &mse_buffer_ring, &uts_buffer_ring, &umass_buffer_ring);
+    FatFs = malloc(sizeof(FATFS));
     print_info("Initialised\n");
 }
 
@@ -444,11 +532,6 @@ void
 notified(microkit_channel ch) {
     switch(ch) {
 /* ----------------API NOTIFICATIONS---------- */
-        case INIT:
-            cmd_hist_cursor = 0;
-            cmd_hist = -1;
-            init_shell();
-            break;
         case KEYBOARD_EVENT:
             if (console_state != DISABLED)
                 handle_keypress();
@@ -468,6 +551,11 @@ notified(microkit_channel ch) {
             break;
         case NEW_DEVICE_EVENT:
             handle_new_device();
+            break;
+        case INIT:
+            cmd_hist_cursor = 0;
+            cmd_hist = -1;
+            init_shell();
             break;
 /* ---------------------------------------- */
         case SNAKE_NOTIFY:

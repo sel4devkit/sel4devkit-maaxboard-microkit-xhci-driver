@@ -80,9 +80,6 @@ enum states console_state = CONSOLE;
 #define kmem_alloc(size, km_flag_t) malloc(size);
 #define kmem_free(addr, size_t) free(addr);
 
-int __lshrti3(a,b) { return a >> b; }
-int __ashlti3(a,b) { return a << b; }
-
 /* Setup for getting printf functionality working */
 static int
 libc_microkit_putc(char c, FILE *file)

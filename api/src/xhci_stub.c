@@ -117,6 +117,8 @@ ring_handle_t *usb_new_device_ring;
 // reset number of devices
 int num_devices = 0;
 
+struct umass_request *active_xfer;
+
 void
 init(void) {
     uintptr_t fdt = microkit_msginfo_get_label(microkit_ppcall(44, seL4_MessageInfo_new(0,0,0,0)));
@@ -257,9 +259,9 @@ init(void) {
 	usb_sc2->sc_bus->ub_needsexplore   = 1;
 
     // setup complete, busses will still need to be explored for devices to function
-    print_info("Initialised\n");
     usb_discover(usb_sc2);
     usb_discover(usb_sc);
+    print_info("Initialised\n");
 	microkit_notify(INIT); //notify client xhci is up and running
 }
 
@@ -268,7 +270,7 @@ init(void) {
 		hexdump(printf, a, b, c); \
     } while (/*CONSTCOND*/0)
 
-void handle_umass_xfer()
+void create_umass_xfer()
 {
     uintptr_t *buffer = 0;
     unsigned int len = 0;
@@ -276,25 +278,19 @@ void handle_umass_xfer()
 
     int index;
     while (!driver_dequeue(umass_buffer_ring->used_ring, (uintptr_t*)&buffer, &len, &cookie)) {
-        struct umass_request* xfer = (struct umass_request*)buffer; 
+        active_xfer = (struct umass_request*) buffer;
 
-        if (xfer->read) {
-            printf("calling read_block: n: %i    s: %i\n", xfer->nblks, xfer->blkno);
-            read_block(xfer->umass_id, xfer->blkno, xfer->nblks, xfer->val);
+        if (active_xfer->read) {
+            printf("calling read_block: n: %i    start: %i\n", active_xfer->nblks, active_xfer->blkno);
+            read_block(active_xfer->umass_id, active_xfer->blkno, active_xfer->nblks, active_xfer->val);
+            HEXDUMP("read", active_xfer->val, (512 * active_xfer->nblks));
         } else {
-            printf("calling write_block: n: %i    s: %i\n", xfer->nblks, xfer->blkno);
-            HEXDUMP("write", xfer->val, (512 * xfer->nblks));
-            write_block(xfer->umass_id, xfer->blkno, xfer->nblks, xfer->val);
+            printf("calling write_block: n: %i    start: %i\n", active_xfer->nblks, active_xfer->blkno);
+            HEXDUMP("write", active_xfer->val, (512 * active_xfer->nblks));
+            write_block(active_xfer->umass_id, active_xfer->blkno, active_xfer->nblks, active_xfer->val);
         }
     }
 }
-
-void handle_usb_new_device()
-{
-    // TODO
-    printf("!!!!!!! new device");
-}
-
 
 void
 notified(microkit_channel ch)
@@ -314,13 +310,16 @@ notified(microkit_channel ch)
             }
             break;
         case 47:
-            handle_umass_xfer();
+            create_umass_xfer();
             break;
-        case 50:
-            handle_usb_new_device();
+        /* case 50: */
+        /*     handle_usb_new_device(); */
+        /*     break; */
+        case UMASS_COMPLETE:
+            active_xfer->complete = true; // unlock client
             break;
         default:
-            print_warn("xhci_stub received notification unexpected channel\n");
+            print_warn("xhci_stub received notification unexpected channel %d\n", ch);
     }
 }
 
