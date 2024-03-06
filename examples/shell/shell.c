@@ -76,7 +76,7 @@ init_shell() {
     // strncpy(cmd, test_cmd2, strlen(test_cmd2));
     // cursor_index = strlen(test_cmd2);
     // decode_command();
-    char *test_cmd = "fatwrite newfile23.txt";
+    char *test_cmd = "fatwrite exam12345.txt";
     strncpy(cmd, test_cmd, strlen(test_cmd));
     cursor_index = strlen(test_cmd);
     decode_command();
@@ -233,7 +233,7 @@ decode_command() {
             } else {
                 printf("Failed to open \"%s\". (%u)\n", path, res);
             }
-        } else if (!strcmp(parsedArgs[0], "file")) {
+        } else if (!strcmp(parsedArgs[0], "fatread")) {
             char* fileName = parsedArgs[1];
             printf("Trying to read file %s\n", fileName);
             char *line = malloc(100);
@@ -251,7 +251,7 @@ decode_command() {
                     printf("======= SOF %s =======\n", fileName);
                     /* ms_delay(1000); */
                     while (f_gets(line, sizeof(char) * 100, fp)) {
-                        printf("%s", line);
+                        printf("%s\n", line);
                     }
 
                     f_close(fp);
@@ -266,8 +266,8 @@ decode_command() {
 
             char *fileName = parsedArgs[1];
             printf("writing to file '%s'\n", fileName);
-            char *teststr = "abc";
-            char *buffer = malloc(sizeof(char)*3);
+            char *teststr = "thisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatest";
+            char *buffer = malloc(sizeof(char)*strlen(teststr));
             printf("strncpy\n");
             strncpy(buffer, teststr, strlen(teststr));
             printf("mounting fatfs\n");
@@ -279,11 +279,11 @@ decode_command() {
             if (fr)
                 printf("file error open %d\n", fr);
             printf("opened new file\n");
-            // fr = f_write(file, buffer, sizeof(char) * 3, &bw);
-            // if (fr)
-            //     printf("file error write %d\n", fr);
+            fr = f_write(file, buffer, sizeof(char) * strlen(teststr), &bw);
+            if (fr)
+                printf("file error write %d\n", fr);
             f_close(file);
-            // printf("wrote %d to file %s\n", bw, fileName);
+            printf("wrote %d to file %s\n", bw, fileName);
         } else if (!strcmp(parsedArgs[0], "kbdtest")) {
             printf("\n");
             console_state = KEYBOARD_TEST;

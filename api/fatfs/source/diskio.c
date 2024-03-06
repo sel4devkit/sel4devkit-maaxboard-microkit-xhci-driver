@@ -139,11 +139,11 @@ DRESULT disk_write (
 	case DEV_USB :
 		// translate the arguments here
 
-		HEXDUMP("WRITING buff\n", buff, sizeof(*buff));
 		printf("size buf %d\n", sizeof(*buff));
-		memcpy(temp_buff, buff, sizeof(*buff));
+		memcpy(temp_buff, buff, count*512);
+		HEXDUMP("WRITING buff\n", temp_buff, count*512);
 		result = enqueue_umass_request(5, false, sector, count, temp_buff, NULL);
-		buff = temp_buff;
+		// buff = temp_buff;
 
 		// translate the result code here
 		if (result == -1)

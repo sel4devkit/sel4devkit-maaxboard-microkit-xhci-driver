@@ -14,13 +14,13 @@ export SEL4_XHCI_PATH=$( dirname -- "$( readlink -f -- "$0"; )"; )
 export BUILD_DIR=$SEL4_XHCI_PATH/xhci_build
 export NETBSD_DIR="$SEL4_XHCI_PATH/netbsd/src"
 
-mkdir -p $BUILD_DIR
+mkdir -p "$BUILD_DIR"
 
 examples=( "shell" "empty-client" )
 
 print_examples() {
     echo "EXAMPLES:"
-    for e in ${examples[@]}; do
+    for e in "${examples[@]}"; do
         echo "  $e"
     done
 }
@@ -35,17 +35,20 @@ print_usage() {
     echo "      remove build files"
     echo "  -d debug"
     echo "      enable debugging output"
+    echo "  -p compile"
+    echo "      create compiler include paths (for clangd)"
     echo
     print_examples
     exit 1
 }
 
-while getopts 'e:rcd' flag; do
+while getopts 'e:rcpd' flag; do
   case "${flag}" in
     e) export EXAMPLE="${OPTARG}" ;;
     r) rebuild="true" ;;
     c) clean="true" ;;
     d) export SEL4_USB_DEBUG="true" ;;
+    p) compiler="true";;
     *) print_usage ;;
   esac
 done
@@ -65,12 +68,19 @@ if [[ ! " ${examples[*]} " =~ [[:space:]]${EXAMPLE}[[:space:]] ]]; then
 fi
 
 if [ "$clean" = "true" ] ; then
-    make -C $SEL4_XHCI_PATH clean
+    make -C "$SEL4_XHCI_PATH" clean
 elif [ "$rebuild" = "true" ]; then
-    make -C $SEL4_XHCI_PATH clean
-    make -C $SEL4_XHCI_PATH
+    make -C "$SEL4_XHCI_PATH" clean
+    make -C "$SEL4_XHCI_PATH"
+elif [ "$compiler" = "true" ]; then
+    make -C "$SEL4_XHCI_PATH" clean
+    make -C "$SEL4_XHCI_PATH" --always-make --dry-run \
+    | grep -wE 'gcc|g\+\+' \
+    | grep -w '\-c' \
+    | jq -nR '[inputs|{directory:".", command:., file: match(" [^ ]+$").string[1:]}]' \
+    > compile_commands.json
 else
-    make -C $SEL4_XHCI_PATH
+    make -C "$SEL4_XHCI_PATH"
 fi
 
 # specific to capgemini implementation

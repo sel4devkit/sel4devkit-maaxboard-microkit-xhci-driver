@@ -286,7 +286,8 @@ void create_umass_xfer()
             HEXDUMP("read", active_xfer->val, (512 * active_xfer->nblks));
         } else {
             printf("calling write_block: n: %i    start: %i\n", active_xfer->nblks, active_xfer->blkno);
-            HEXDUMP("write", active_xfer->val, (512 * active_xfer->nblks));
+            // printf("WITHHOLDING WRITE BECAUSE IT WON'T BEHAVE...\n");
+            // HEXDUMP("write", active_xfer->val, (512 * active_xfer->nblks));
             write_block(active_xfer->umass_id, active_xfer->blkno, active_xfer->nblks, active_xfer->val);
         }
     }

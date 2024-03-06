@@ -1,9 +1,8 @@
 #include <xhci_api.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdio.h>
-#include <math.h>
+#include <stdlib.h>
 
 uintptr_t umass_free;
 uintptr_t umass_used;
@@ -31,7 +30,7 @@ int umass_id = 0;
 int num_devices = 0;
 struct sel4_usb_device* usb_devices[MAX_DEVICES];
 
-int execute_next();
+int execute_next(struct sel4_usb_device*);
 
 /**
  * api_init(): initialise structures required by api

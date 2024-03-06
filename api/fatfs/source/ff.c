@@ -24,6 +24,12 @@
 #include "diskio.h"		/* Declarations of device I/O functions */
 
 
+#define HEXDUMP(a, b, c) \
+    do { \
+		hexdump(printf, a, b, c); \
+    } while (/*CONSTCOND*/0)
+
+
 /*--------------------------------------------------------------------------
 
    Module Private Definitions
@@ -1061,6 +1067,7 @@ static FRESULT sync_window (	/* Returns FR_OK or FR_DISK_ERR */
 
 	if (fs->wflag) {	/* Is the disk access window dirty? */
 	 	printf("sync_window write\n");
+		HEXDUMP("win@sync window", fs->win, sizeof(fs->win));
 		if (disk_write(fs->pdrv, fs->win, fs->winsect, 1) == RES_OK) {	/* Write it back into the volume */
 			fs->wflag = 0;	/* Clear window dirty flag */
 			if (fs->winsect - fs->fatbase < fs->fsize) {	/* Is it in the 1st FAT? */
@@ -1084,6 +1091,8 @@ static FRESULT move_window (	/* Returns FR_OK or FR_DISK_ERR */
 
 
 	if (sect != fs->winsect) {	/* Window offset changed? */
+		printf("window offset has changed\n");
+		HEXDUMP("win", fs->win, sizeof(fs->win));
 #if !FF_FS_READONLY
 		res = sync_window(fs);		/* Flush the window */
 #endif
@@ -2318,6 +2327,7 @@ static FRESULT dir_read (
 #endif
 
 	while (dp->sect) {
+		printf("move window in dir_read\n");
 		res = move_window(fs, dp->sect);
 		if (res != FR_OK) break;
 		b = dp->dir[DIR_Name];	/* Test for the entry type */
@@ -2421,6 +2431,7 @@ static FRESULT dir_find (	/* FR_OK(0):succeeded, !=0:error */
 	ord = sum = 0xFF; dp->blk_ofs = 0xFFFFFFFF;	/* Reset LFN sequence */
 #endif
 	do {
+		printf("move window in dir_find\n");
 		res = move_window(fs, dp->sect);
 		if (res != FR_OK) break;
 		c = dp->dir[DIR_Name];
@@ -2533,6 +2544,7 @@ static FRESULT dir_register (	/* FR_OK:succeeded, FR_DENIED:no free entry or too
 		if (res == FR_OK) {
 			sum = sum_sfn(dp->fn);	/* Checksum value of the SFN tied to the LFN */
 			do {					/* Store LFN entries in bottom first */
+			 	printf("move window in dir register\n");
 				res = move_window(fs, dp->sect);
 				if (res != FR_OK) break;
 				printf("putting long filename %s\n", fs->lfnbuf);
@@ -3303,6 +3315,7 @@ static UINT check_fs (	/* 0:FAT/FAT32 VBR, 1:exFAT VBR, 2:Not FAT and valid BS, 
 
 
 	fs->wflag = 0; fs->winsect = (LBA_t)0 - 1;		/* Invaidate window */
+	printf("move window in checkfs\n");
 	if (move_window(fs, sect) != FR_OK) return 4;	/* Load the boot sector */
 	sign = ld_word(fs->win + BS_55AA);
 #if FF_FS_EXFAT
@@ -4202,6 +4215,7 @@ FRESULT f_sync (
 			} else
 #endif
 			{
+				printf("move window in sync fs\n");
 				res = move_window(fs, fp->dir_sect);
 				if (res == FR_OK) {
 					dir = fp->dir_ptr;
