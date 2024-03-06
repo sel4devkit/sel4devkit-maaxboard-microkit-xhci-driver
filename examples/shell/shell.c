@@ -72,13 +72,17 @@ init_shell() {
     print_splash_screen_2();
     console_state = CONSOLE;
     printf("\nseL4 test>>> ");
-    // char *test_cmd2 = "fatwrite newfile23.txt";
-    // strncpy(cmd, test_cmd2, strlen(test_cmd2));
-    // cursor_index = strlen(test_cmd2);
-    // decode_command();
-    char *test_cmd = "fatwrite exam12345.txt";
+    char *test_cmd2 = "fatls /";
+    strncpy(cmd, test_cmd2, strlen(test_cmd2));
+    cursor_index = strlen(test_cmd2);
+    decode_command();
+    char *test_cmd = "fatwrite testfile234.txt";
     strncpy(cmd, test_cmd, strlen(test_cmd));
     cursor_index = strlen(test_cmd);
+    decode_command();
+    char *test_cmd3 = "fatread testfile234.txt";
+    strncpy(cmd, test_cmd3, strlen(test_cmd3));
+    cursor_index = strlen(test_cmd3);
     decode_command();
 }
 
@@ -215,6 +219,7 @@ decode_command() {
             char *path = parsedArgs[1];
 
             res = f_opendir(dir, path);                       /* Open the directory */
+            printf("fstype %d\n", FatFs->fs_type);
             if (res == FR_OK) {
                 nfile = ndir = 0;
                 for (;;) {
@@ -228,35 +233,32 @@ decode_command() {
                         nfile++;
                     }
                 }
-                // closedir(dir);
+                f_closedir(dir);
+                printf("fstype %d\n", FatFs->fs_type);
                 printf("%d dirs, %d files.\n", ndir, nfile);
+                printf("fstype %d\n", FatFs->fs_type);
             } else {
                 printf("Failed to open \"%s\". (%u)\n", path, res);
             }
         } else if (!strcmp(parsedArgs[0], "fatread")) {
             char* fileName = parsedArgs[1];
-            printf("Trying to read file %s\n", fileName);
             char *line = malloc(100);
             FIL *fp = malloc(sizeof(FIL));
             BYTE mode = FA_READ;
             FRESULT fr;
             fr = f_mount(FatFs, "2", 0);
-            if (fr)
-                printf("mount error %d\n", fr);
-            else {
-                fr = f_open (fp, fileName, mode);
-                if (fr) {
-                    printf("file error %d\n", fr);
-                } else {
-                    printf("======= SOF %s =======\n", fileName);
-                    /* ms_delay(1000); */
-                    while (f_gets(line, sizeof(char) * 100, fp)) {
-                        printf("%s\n", line);
-                    }
-
-                    f_close(fp);
-                    printf("======= EOF %s =======\n", fileName);
+            fr = f_open (fp, fileName, mode);
+            if (fr) {
+                printf("file error %d\n", fr);
+            } else {
+                printf("======= SOF %s =======\n", fileName);
+                /* ms_delay(1000); */
+                while (f_gets(line, sizeof(char) * 100, fp)) {
+                    printf("%s\n", line);
                 }
+
+                f_close(fp);
+                printf("======= EOF %s =======\n", fileName);
             }
         } else if (!strcmp(parsedArgs[0], "fatwrite")) {
             FIL *file = malloc(sizeof(FIL));
@@ -268,17 +270,11 @@ decode_command() {
             printf("writing to file '%s'\n", fileName);
             char *teststr = "thisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatest";
             char *buffer = malloc(sizeof(char)*strlen(teststr));
-            printf("strncpy\n");
             strncpy(buffer, teststr, strlen(teststr));
-            printf("mounting fatfs\n");
             fr = f_mount(FatFs, "2", 0);
-            if (fr)
-                printf("mount error %d\n", fr);
-            printf("opening file\n");
             fr = f_open(file, fileName, mode);
             if (fr)
                 printf("file error open %d\n", fr);
-            printf("opened new file\n");
             fr = f_write(file, buffer, sizeof(char) * strlen(teststr), &bw);
             if (fr)
                 printf("file error write %d\n", fr);
@@ -524,7 +520,15 @@ handle_keypress()
 void
 init(void) {
     api_init(&kbd_buffer_ring, &mse_buffer_ring, &uts_buffer_ring, &umass_buffer_ring);
-    FatFs = malloc(sizeof(FATFS));
+    FatFs = malloc(sizeof(*FatFs));
+    FRESULT fr = f_mount(FatFs, "2", 0);
+    if (fr) {
+        print_info("mount error %d\n", fr);
+    }
+    else {
+        print_info("Mounted USB succesfully\n");
+    }
+
     print_info("Initialised\n");
 }
 

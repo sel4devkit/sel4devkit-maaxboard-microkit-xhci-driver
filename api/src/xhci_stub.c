@@ -281,12 +281,11 @@ void create_umass_xfer()
         active_xfer = (struct umass_request*) buffer;
 
         if (active_xfer->read) {
-            printf("calling read_block: n: %i    start: %i\n", active_xfer->nblks, active_xfer->blkno);
+            /* printf("calling read_block: n: %i    start: %i\n", active_xfer->nblks, active_xfer->blkno); */
             read_block(active_xfer->umass_id, active_xfer->blkno, active_xfer->nblks, active_xfer->val);
-            HEXDUMP("read", active_xfer->val, (512 * active_xfer->nblks));
+            /* HEXDUMP("read", active_xfer->val, (512 * active_xfer->nblks)); */
         } else {
-            printf("calling write_block: n: %i    start: %i\n", active_xfer->nblks, active_xfer->blkno);
-            // printf("WITHHOLDING WRITE BECAUSE IT WON'T BEHAVE...\n");
+            /* printf("calling write_block: n: %i    start: %i\n", active_xfer->nblks, active_xfer->blkno); */
             // HEXDUMP("write", active_xfer->val, (512 * active_xfer->nblks));
             write_block(active_xfer->umass_id, active_xfer->blkno, active_xfer->nblks, active_xfer->val);
         }

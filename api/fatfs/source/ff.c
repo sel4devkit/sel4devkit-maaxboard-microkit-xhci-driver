@@ -24,12 +24,6 @@
 #include "diskio.h"		/* Declarations of device I/O functions */
 
 
-#define HEXDUMP(a, b, c) \
-    do { \
-		hexdump(printf, a, b, c); \
-    } while (/*CONSTCOND*/0)
-
-
 /*--------------------------------------------------------------------------
 
    Module Private Definitions
@@ -1066,8 +1060,6 @@ static FRESULT sync_window (	/* Returns FR_OK or FR_DISK_ERR */
 
 
 	if (fs->wflag) {	/* Is the disk access window dirty? */
-	 	printf("sync_window write\n");
-		HEXDUMP("win@sync window", fs->win, sizeof(fs->win));
 		if (disk_write(fs->pdrv, fs->win, fs->winsect, 1) == RES_OK) {	/* Write it back into the volume */
 			fs->wflag = 0;	/* Clear window dirty flag */
 			if (fs->winsect - fs->fatbase < fs->fsize) {	/* Is it in the 1st FAT? */
@@ -1091,8 +1083,6 @@ static FRESULT move_window (	/* Returns FR_OK or FR_DISK_ERR */
 
 
 	if (sect != fs->winsect) {	/* Window offset changed? */
-		printf("window offset has changed\n");
-		HEXDUMP("win", fs->win, sizeof(fs->win));
 #if !FF_FS_READONLY
 		res = sync_window(fs);		/* Flush the window */
 #endif
@@ -1133,7 +1123,6 @@ static FRESULT sync_fs (	/* Returns FR_OK or FR_DISK_ERR */
 			st_dword(fs->win + FSI_Free_Count, fs->free_clst);	/* Number of free clusters */
 			st_dword(fs->win + FSI_Nxt_Free, fs->last_clst);	/* Last allocated culuster */
 			fs->winsect = fs->volbase + 1;						/* Write it into the FSInfo sector (Next to VBR) */
-			printf("sync fs write\n");
 			disk_write(fs->pdrv, fs->win, fs->winsect, 1);
 			fs->fsi_flag = 0;
 		}
@@ -2327,7 +2316,6 @@ static FRESULT dir_read (
 #endif
 
 	while (dp->sect) {
-		printf("move window in dir_read\n");
 		res = move_window(fs, dp->sect);
 		if (res != FR_OK) break;
 		b = dp->dir[DIR_Name];	/* Test for the entry type */
@@ -2431,7 +2419,6 @@ static FRESULT dir_find (	/* FR_OK(0):succeeded, !=0:error */
 	ord = sum = 0xFF; dp->blk_ofs = 0xFFFFFFFF;	/* Reset LFN sequence */
 #endif
 	do {
-		printf("move window in dir_find\n");
 		res = move_window(fs, dp->sect);
 		if (res != FR_OK) break;
 		c = dp->dir[DIR_Name];
@@ -2488,7 +2475,6 @@ static FRESULT dir_register (	/* FR_OK:succeeded, FR_DENIED:no free entry or too
 
 	if (dp->fn[NSFLAG] & (NS_DOT | NS_NONAME)) return FR_INVALID_NAME;	/* Check name validity */
 	for (len = 0; fs->lfnbuf[len]; len++) ;	/* Get lfn length */
-	printf("lfn len %d\n", len);
 
 #if FF_FS_EXFAT
 	if (fs->fs_type == FS_EXFAT) {	/* On the exFAT volume */
@@ -2537,17 +2523,14 @@ static FRESULT dir_register (	/* FR_OK:succeeded, FR_DENIED:no free entry or too
 
 	/* Create an SFN with/without LFNs. */
 	n_ent = (sn[NSFLAG] & NS_LFN) ? (len + 12) / 13 + 1 : 1;	/* Number of entries to allocate */
-	printf("N_ent\n", n_ent);
 	res = dir_alloc(dp, n_ent);		/* Allocate entries */
 	if (res == FR_OK && --n_ent) {	/* Set LFN entry if needed */
 		res = dir_sdi(dp, dp->dptr - n_ent * SZDIRE);
 		if (res == FR_OK) {
 			sum = sum_sfn(dp->fn);	/* Checksum value of the SFN tied to the LFN */
 			do {					/* Store LFN entries in bottom first */
-			 	printf("move window in dir register\n");
 				res = move_window(fs, dp->sect);
 				if (res != FR_OK) break;
-				printf("putting long filename %s\n", fs->lfnbuf);
 				put_lfn(fs->lfnbuf, dp->dir, (BYTE)n_ent, sum);
 				fs->wflag = 1;
 				res = dir_next(dp, 0);	/* Next entry */
@@ -3315,7 +3298,6 @@ static UINT check_fs (	/* 0:FAT/FAT32 VBR, 1:exFAT VBR, 2:Not FAT and valid BS, 
 
 
 	fs->wflag = 0; fs->winsect = (LBA_t)0 - 1;		/* Invaidate window */
-	printf("move window in checkfs\n");
 	if (move_window(fs, sect) != FR_OK) return 4;	/* Load the boot sector */
 	sign = ld_word(fs->win + BS_55AA);
 #if FF_FS_EXFAT
@@ -3416,12 +3398,17 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 
 
 	/* Get logical drive number */
+	printf("rfs\n");
+	// printf("%p\n", **rfs);
+
 	*rfs = 0;
 	vol = get_ldnumber(path);
 	if (vol < 0) return FR_INVALID_DRIVE;
 
 	/* Check if the filesystem object is valid or not */
 	fs = FatFs[vol];					/* Get pointer to the filesystem object */
+	printf("FatFs %p\n", FatFs);
+	printf("fs %p, vol %d\n", fs, vol);
 	if (!fs) return FR_NOT_ENABLED;		/* Is the filesystem object available? */
 #if FF_FS_REENTRANT
 	if (!lock_volume(fs, 1)) return FR_TIMEOUT;	/* Lock the volume, and system if needed */
@@ -3429,8 +3416,11 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 	*rfs = fs;							/* Return pointer to the filesystem object */
 
 	mode &= (BYTE)~FA_READ;				/* Desired access mode, write access or not */
+	printf("mount 1\n");
+	printf("fs->fs_type %d\n", fs->fs_type);
 	if (fs->fs_type != 0) {				/* If the volume has been mounted */
 		stat = disk_status(fs->pdrv);
+		printf("stat %d\n", stat);
 		if (!(stat & STA_NOINIT)) {		/* and the physical drive is kept initialized */
 			if (!FF_FS_READONLY && mode && (stat & STA_PROTECT)) {	/* Check write protection if needed */
 				return FR_WRITE_PROTECTED;
@@ -3438,6 +3428,7 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 			return FR_OK;				/* The filesystem object is already valid */
 		}
 	}
+	printf("mount 2\n");
 
 	/* The filesystem object is not valid. */
 	/* Following code attempts to mount the volume. (find an FAT volume, analyze the BPB and initialize the filesystem object) */
@@ -3456,6 +3447,7 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 #endif
 
 	/* Find an FAT volume on the hosting drive */
+	printf("find vol\n");
 	fmt = find_volume(fs, LD2PT(vol));
 	if (fmt == 4) return FR_DISK_ERR;		/* An error occurred in the disk I/O layer */
 	if (fmt >= 2) return FR_NO_FILESYSTEM;	/* No FAT volume is found */
@@ -3688,8 +3680,10 @@ FRESULT f_mount (
 	/* Get volume ID (logical drive number) */
 	vol = get_ldnumber(&rp);
 	if (vol < 0) return FR_INVALID_DRIVE;
+	printf("mount at %d\n", vol);
 	cfs = FatFs[vol];			/* Pointer to the filesystem object of the volume */
-
+	printf("cfs = %p\n", cfs);
+	cfs = 0;
 	if (cfs) {					/* Unregister current filesystem object if regsitered */
 		FatFs[vol] = 0;
 #if FF_FS_LOCK
@@ -3717,6 +3711,7 @@ FRESULT f_mount (
 #endif
 #endif
 		fs->fs_type = 0;		/* Invalidate the new filesystem object */
+		printf("registering %p to %d\n", fs, vol);
 		FatFs[vol] = fs;		/* Register new fs object */
 	}
 
@@ -3754,8 +3749,10 @@ FRESULT f_open (
 
 	/* Get logical drive number */
 	mode &= FF_FS_READONLY ? FA_READ : FA_READ | FA_WRITE | FA_CREATE_ALWAYS | FA_CREATE_NEW | FA_OPEN_ALWAYS | FA_OPEN_APPEND;
+	printf("mounting\n");
+	// printf("fs->fs_type %d\n", fs->fs_type);
 	res = mount_volume(&path, &fs, mode);
-	printf("path %s\n", path);
+	printf("mount ok\n");
 	if (res == FR_OK) {
 		dj.obj.fs = fs;
 		INIT_NAMBUF(fs);
@@ -3775,12 +3772,10 @@ FRESULT f_open (
 		if (mode & (FA_CREATE_ALWAYS | FA_OPEN_ALWAYS | FA_CREATE_NEW)) {
 			if (res != FR_OK) {					/* No file, create new */
 				if (res == FR_NO_FILE) {		/* There is no file to open, create a new entry */
-					printf("creating new file at %s\n", path);
 #if FF_FS_LOCK
 					res = enq_share() ? dir_register(&dj) : FR_TOO_MANY_OPEN_FILES;
 #else
 					res = dir_register(&dj);
-					printf("file created %d\n", res);
 #endif
 				}
 				mode |= FA_CREATE_ALWAYS;		/* File is created */
@@ -4092,7 +4087,6 @@ FRESULT f_write (
 			if (fs->winsect == fp->sect && sync_window(fs) != FR_OK) ABORT(fs, FR_DISK_ERR);	/* Write-back sector cache */
 #else
 			if (fp->flag & FA_DIRTY) {		/* Write-back sector cache */
-				printf("f_write write\n");
 				if (disk_write(fs->pdrv, fp->buf, fp->sect, 1) != RES_OK) ABORT(fs, FR_DISK_ERR);
 				fp->flag &= (BYTE)~FA_DIRTY;
 			}
@@ -4105,7 +4099,6 @@ FRESULT f_write (
 				if (csect + cc > fs->csize) {	/* Clip at cluster boundary */
 					cc = fs->csize - csect;
 				}
-				printf("f_write write 2\n");
 				if (disk_write(fs->pdrv, wbuff, sect, cc) != RES_OK) ABORT(fs, FR_DISK_ERR);
 #if FF_FS_MINIMIZE <= 2
 #if FF_FS_TINY
@@ -4176,7 +4169,6 @@ FRESULT f_sync (
 		if (fp->flag & FA_MODIFIED) {	/* Is there any change to the file? */
 #if !FF_FS_TINY
 			if (fp->flag & FA_DIRTY) {	/* Write-back cached data if needed */
-			 	printf("f_sync write\n");
 				if (disk_write(fs->pdrv, fp->buf, fp->sect, 1) != RES_OK) LEAVE_FF(fs, FR_DISK_ERR);
 				fp->flag &= (BYTE)~FA_DIRTY;
 			}
@@ -4215,7 +4207,6 @@ FRESULT f_sync (
 			} else
 #endif
 			{
-				printf("move window in sync fs\n");
 				res = move_window(fs, fp->dir_sect);
 				if (res == FR_OK) {
 					dir = fp->dir_ptr;

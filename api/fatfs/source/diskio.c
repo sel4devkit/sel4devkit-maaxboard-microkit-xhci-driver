@@ -18,13 +18,6 @@
 #define DEV_MMC		1	/* Example: Map MMC/SD card to physical drive 1 */
 #define DEV_USB		2	/* Example: Map USB MSD to physical drive 2 */
 
-#define HEXDUMP(a, b, c) \
-    do { \
-		hexdump(printf, a, b, c); \
-    } while (/*CONSTCOND*/0)
-
-
-
 /*-----------------------------------------------------------------------*/
 /* Get Drive Status                                                      */
 /*-----------------------------------------------------------------------*/
@@ -45,7 +38,7 @@ DSTATUS disk_status (
 
 		return stat = 0;
 	}
-	return STA_NOINIT;
+	return 0;
 }
 
 
@@ -99,8 +92,9 @@ DRESULT disk_read (
 	case DEV_USB :
 		// translate the arguments here
 
-        /* printf("enqueueing %d blocks at %d\n", count, sector); */
+        // printf("enqueueing %d blocks at %d\n", count, sector);
 		result = enqueue_umass_request(5, true, sector, count, buff, NULL);
+		// printf("returned\n");
 
 		// translate the result code here
 		if (result == -1)
@@ -138,12 +132,8 @@ DRESULT disk_write (
 	switch (pdrv) {
 	case DEV_USB :
 		// translate the arguments here
-
-		printf("size buf %d\n", sizeof(*buff));
-		memcpy(temp_buff, buff, count*512);
-		HEXDUMP("WRITING buff\n", temp_buff, count*512);
+		memcpy(temp_buff, buff, count*512); // dump buffer in shared mem
 		result = enqueue_umass_request(5, false, sector, count, temp_buff, NULL);
-		// buff = temp_buff;
 
 		// translate the result code here
 		if (result == -1)
@@ -179,7 +169,7 @@ DRESULT disk_ioctl (
 
 		// Process of the command the USB drive
 		if (cmd & CTRL_SYNC) {
-			HEXDUMP("ioctl buff\n", buff, sizeof(*buff));
+			/* HEXDUMP("ioctl buff\n", buff, sizeof(*buff)); */
 			return RES_OK;
 		}
 
