@@ -16,6 +16,9 @@ struct commands {
 struct commands command_list[] = {
     {"disable", "toggle keyboard", "toggle keyboard (can be reenabled with mouse scroll)"},
     {"kbdtest", "enter keyboard test", "Enter keyboard test mode"},
+    {"fatls", "list files at filepath", "Usage: fatls <devid> <filepath>"},
+    {"fatread", "read file", "Usage: fatread <devid> <filepath>"},
+    {"fatwrite", "write file", "Usage: fatwrite <devid> <filepath> <value>"},
     {"getdev", "print device information", "Usage: Getdev <id>\nGet device info of device <id>"},
     {"history", "display history", "display list of commands"},
     {"init", "display splash", "display splash"},
@@ -30,23 +33,6 @@ int no_commands = 10;
 
 //! should get this from device information, hardcoded for now
 #define SECTOR_SIZE 512
-
-// // from apple open source library
-// int
-// atoi(const char *in)
-// {
-// 	char *c;
-// 	int ret;
-
-// 	ret = 0;
-// 	c = in;
-// 	if (*c == '-')
-// 		c++;
-// 	for (; isdigit(*c); c++)
-// 		ret = (ret * 10) + (*c - '0');
-
-// 	return (*in == '-') ? -ret : ret;
-// }
 
 #define ANSI_RED		"\x1b[1;31m"
 #define ANSI_GREEN		"\x1b[1;32m"
@@ -71,11 +57,6 @@ enum states {
 };
 
 enum states console_state = CONSOLE;
-
-//libc stuff
-// #define kmem_zalloc(size, km_flag_t) (void*) microkit_msginfo_get_label(microkit_ppcall(31, seL4_MessageInfo_new(size, 1, 0, 0)));
-// #define kmem_alloc(size, km_flag_t) (void*) microkit_msginfo_get_label(microkit_ppcall(30, seL4_MessageInfo_new(size, 1, 0, 0)));
-// #define kmem_free(addr, size_t) microkit_msginfo_get_label(microkit_ppcall(32, seL4_MessageInfo_new((uintptr_t)addr, 1, 0, 0)));
 
 #define kmem_zalloc(size, km_flag_t) calloc(1, size);
 #define kmem_alloc(size, km_flag_t) malloc(size);
