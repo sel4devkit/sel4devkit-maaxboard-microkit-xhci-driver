@@ -208,7 +208,7 @@ The shell example also permits filesystem reads/writes/lists (FAT is the only su
 - Pulled in initial bus reads/writes
 - Pulled in all netbsd headers required
 - Can perform dwc3 bring up
-- Implemented printf and malloc
+- Implemented full c standard library (picolibc)
     - malloc receives heap base allocated in `xhci_stub.system`
     - printf receives `microkit_debug_putc()`
 - Pulled in other C files
@@ -230,9 +230,10 @@ The shell example also permits filesystem reads/writes/lists (FAT is the only su
     - Our device has no z input but should work for those devices that do
 - Autoconf to enable switching between devices (attempts to match and attaches to best match) - as opposed to harcoding for specific devices
 - USB Hub support now included
-    - Tested with 3 devices, more likely to be supported but untested
+    - Tested with 4 devices, more likely to be supported but untested
 - Mass storage support
-- API created with sample client
+- API created with sample clients
+- Synchronous file system added
 
 ### TODO:
 - Condition variables (?)
@@ -241,6 +242,7 @@ The shell example also permits filesystem reads/writes/lists (FAT is the only su
     - ~~Touchscreen~~ DONE
     - ~~Root hub that isn't the pseudo device~~ DONE
 - Simultaneous devices. Work but needs more extensive testing to make sure we don't have any race conditions
+- Add sDDF async filesystem
 
 ### Bugs/strange things/important changelog
 - ~~`xhci_setup_route` should include path of root hub, but doesn't. No issues because of this yet, but something to look at in the future if breakages happen~~
@@ -248,8 +250,8 @@ The shell example also permits filesystem reads/writes/lists (FAT is the only su
 - ~~`xfer->ux_callback()` commented out and replaced with `uhub_intr()` or `device_ctrl_intr()`. Will likely become a problem in the future, but right now it works.~~
     - ~~A few other hard commented quirks, such as `uhidev_attach` and `ukbd_intr`~~
     - **NEW!** No longer a problem. Autoconf introduced to remove attach hardcodings and new structure in usb.h: `intr_ptrs` included to contain pointers to interrupt function in software interrupt PD.
-- Setting MaxBRate of device in `xhci_new_device` returns 0, overwriting correct value returned by `get_initial_ddesc()` if device speed is not ss. Fixed by checking if 0 is returned and if so using the ddesc value.
-    - **TODO!**: this always returns 9 which is incorrect usage.
+- ~~Setting MaxBRate of device in `xhci_new_device` returns 0, overwriting correct value returned by `get_initial_ddesc()` if device speed is not ss. Fixed by checking if 0 is returned and if so using the ddesc value.~~
+    - ~~**NEW!**: fixed by setting up device description memory regions properly.
 - `bus_methods` replaced with pointer to `xhci_bus_methods` because this is an xhci driver, so assume that it's always going to use an xhci bus.
 - `cv_waitsig()` replaced with `usbd_delay_ms(0, 100)` to delay 100ms instead of waiting for cv to change.
 - `xfer->ux_status` set to `USBD_IN_PROGRESS` before doing anything else (different to netbsd which schedules a callout).
