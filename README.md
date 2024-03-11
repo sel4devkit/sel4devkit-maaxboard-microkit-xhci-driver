@@ -35,6 +35,7 @@ Specifically, we have provided support for these USB devices:
 - This driver assumes the existence of a built microkit sdk.
 - This driver assumes a pre-built microkit libc (found in this [repository](https://github.com/sel4-cap/picolibc/tree/linker_crt))
     - Use branch linker_crt
+
 ## Building
 To build this driver, use the `build.sh` bash script. The script assumes the driver has been pulled using the microkit manifest and therefore assumes the directory structure will mirror this.
 
@@ -54,6 +55,14 @@ Breakdown of variables set:
 - `NETBSD_DIR`: Path of netbsd directory
 
 By default, the driver will build with an empty example client that is subscribed to all interrupt channels. Data will not be handled. Upon successful initialisation, a list of devices plugged into the board will be printed.
+
+The driver can be built with either a shell example (provides a shell like program), or an empty client that is subscribed to all channels, and will print a list of supported devices plugged into the board. The usage is as follows:
+
+```sh
+./build.sh -e shell # or empty client
+```
+
+Call `./build.sh` with no arguments to see optional flags.
 
 ## Setup
 The driver will require some memory regions to be mapped into both the driver PD and the client PD. Here is a list of the required memory regions:
@@ -189,6 +198,8 @@ For both commands, `enqueue_umass_request()` is used. The API handles the lockin
     - Read: Pointer in shared data to write data
     - Write: Pointer in shared data containing value to write
 - `void* cb`: Optional callback function that is called on transfer completion.
+
+The shell example also permits filesystem reads/writes/lists (FAT is the only supported filesystem currently). Note that the mass storage queue is different to that outlined by sDDF. This is due to the `current_xfer` field, that allows the locking and unlocking of client threads when waiting for block access, since reading and writing are both *synchronous* in the current version.
 
 ## CHANGELOG
 ### DONE:
