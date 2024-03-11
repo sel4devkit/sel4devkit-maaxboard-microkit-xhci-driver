@@ -1,7 +1,8 @@
 // keycode defs
-#include <wsksymdef.h>
+#include "wsksymdef.h"
 #include <stdio.h> 
 #include <stdlib.h>
+#include <microkit.h>
 typedef unsigned short keysym_t;
 
 #define SNAKE_NOTIFY 10

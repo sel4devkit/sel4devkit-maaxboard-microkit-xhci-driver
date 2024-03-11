@@ -46,7 +46,7 @@ void api_init(ring_handle_t **kbd, ring_handle_t **mse, ring_handle_t **uts, rin
     ring_init(*umass, (ring_buffer_t *)umass_req_free, (ring_buffer_t *)umass_req_used, NULL, 0);
 
     // umass specific initialisation
-    api_request_ring = malloc(sizeof(ring_buffer_t));
+    api_request_ring = (ring_buffer_t*) malloc(sizeof(ring_buffer_t*));
     umass_free = (uintptr_t) malloc(0x200000);
     umass_used = (uintptr_t) malloc(0x200000);
     ring_init(api_request_ring, (ring_buffer_t *)umass_free, (ring_buffer_t *)umass_used, NULL, 1);
@@ -64,7 +64,7 @@ int enqueue_umass_request(int dev_id, bool read, int blkno, int nblks, void* val
     }
 
     int xfer_id = ++current_xfer;
-    struct umass_request* umass_xfer = malloc(sizeof(struct umass_request));
+    struct umass_request* umass_xfer = (struct umass_request*) malloc(sizeof(struct umass_request));
 
     umass_xfer->dev_id = dev->id;
     umass_xfer->umass_id = dev->umass_dev->umass_id;
@@ -76,7 +76,7 @@ int enqueue_umass_request(int dev_id, bool read, int blkno, int nblks, void* val
     umass_xfer->cb = cb;
     umass_xfer->xfer_id = xfer_id;
 
-    enqueue_used(dev->umass_dev->api_request_ring, (uintptr_t) umass_xfer, sizeof(umass_xfer), (void*)0);
+    enqueue_used(dev->umass_dev->api_request_ring, (uintptr_t) umass_xfer, sizeof(*umass_xfer), (void*)0);
 
     // ensure reads and writes are executed in the order they arrived
     if (!dev->umass_dev->locked) {
@@ -108,7 +108,7 @@ int execute_next(struct sel4_usb_device* dev) {
         dev->umass_dev->active_xfer = xfer;
 
         bool empty = ring_empty(umass_buffer_ring->used_ring);
-        int error = enqueue_used(umass_buffer_ring, (uintptr_t) xfer, sizeof(xfer), (void *)0);
+        int error = enqueue_used(umass_buffer_ring, (uintptr_t) xfer, sizeof(*xfer), (void *)0);
         if (empty)
             microkit_notify(47);
 

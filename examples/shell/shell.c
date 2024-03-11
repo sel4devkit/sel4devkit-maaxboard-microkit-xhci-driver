@@ -72,18 +72,6 @@ init_shell() {
     print_splash_screen_2();
     console_state = CONSOLE;
     printf("\nseL4 test>>> ");
-    char *test_cmd2 = "fatls /";
-    strncpy(cmd, test_cmd2, strlen(test_cmd2));
-    cursor_index = strlen(test_cmd2);
-    decode_command();
-    char *test_cmd = "fatwrite testfile234.txt";
-    strncpy(cmd, test_cmd, strlen(test_cmd));
-    cursor_index = strlen(test_cmd);
-    decode_command();
-    char *test_cmd3 = "fatread testfile234.txt";
-    strncpy(cmd, test_cmd3, strlen(test_cmd3));
-    cursor_index = strlen(test_cmd3);
-    decode_command();
 }
 
 // function for parsing command words 
