@@ -29,7 +29,7 @@ struct commands command_list[] = {
     {"write", "write blocks to connected device", "Usage: write <x> <y> <v>\nWrite v (size x blocks) starting from block y"},
 };
 
-int no_commands = 10;
+int no_commands = 13;
 
 //! should get this from device information, hardcoded for now
 #define SECTOR_SIZE 512
