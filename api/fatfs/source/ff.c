@@ -22,7 +22,7 @@
 #include <string.h>
 #include "ff.h"			/* Declarations of FatFs API */
 #include "diskio.h"		/* Declarations of device I/O functions */
-
+#include <stdlib.h>
 
 /*--------------------------------------------------------------------------
 
@@ -3398,8 +3398,6 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 
 
 	/* Get logical drive number */
-	printf("rfs\n");
-	// printf("%p\n", **rfs);
 
 	*rfs = 0;
 	vol = get_ldnumber(path);
@@ -3407,8 +3405,6 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 
 	/* Check if the filesystem object is valid or not */
 	fs = FatFs[vol];					/* Get pointer to the filesystem object */
-	printf("FatFs %p\n", FatFs);
-	printf("fs %p, vol %d\n", fs, vol);
 	if (!fs) return FR_NOT_ENABLED;		/* Is the filesystem object available? */
 #if FF_FS_REENTRANT
 	if (!lock_volume(fs, 1)) return FR_TIMEOUT;	/* Lock the volume, and system if needed */
@@ -3416,11 +3412,8 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 	*rfs = fs;							/* Return pointer to the filesystem object */
 
 	mode &= (BYTE)~FA_READ;				/* Desired access mode, write access or not */
-	printf("mount 1\n");
-	printf("fs->fs_type %d\n", fs->fs_type);
 	if (fs->fs_type != 0) {				/* If the volume has been mounted */
 		stat = disk_status(fs->pdrv);
-		printf("stat %d\n", stat);
 		if (!(stat & STA_NOINIT)) {		/* and the physical drive is kept initialized */
 			if (!FF_FS_READONLY && mode && (stat & STA_PROTECT)) {	/* Check write protection if needed */
 				return FR_WRITE_PROTECTED;
@@ -3428,7 +3421,6 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 			return FR_OK;				/* The filesystem object is already valid */
 		}
 	}
-	printf("mount 2\n");
 
 	/* The filesystem object is not valid. */
 	/* Following code attempts to mount the volume. (find an FAT volume, analyze the BPB and initialize the filesystem object) */
@@ -3447,7 +3439,6 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 #endif
 
 	/* Find an FAT volume on the hosting drive */
-	printf("find vol\n");
 	fmt = find_volume(fs, LD2PT(vol));
 	if (fmt == 4) return FR_DISK_ERR;		/* An error occurred in the disk I/O layer */
 	if (fmt >= 2) return FR_NO_FILESYSTEM;	/* No FAT volume is found */
@@ -3680,9 +3671,7 @@ FRESULT f_mount (
 	/* Get volume ID (logical drive number) */
 	vol = get_ldnumber(&rp);
 	if (vol < 0) return FR_INVALID_DRIVE;
-	printf("mount at %d\n", vol);
 	cfs = FatFs[vol];			/* Pointer to the filesystem object of the volume */
-	printf("cfs = %p\n", cfs);
 	cfs = 0;
 	if (cfs) {					/* Unregister current filesystem object if regsitered */
 		FatFs[vol] = 0;
@@ -3711,7 +3700,6 @@ FRESULT f_mount (
 #endif
 #endif
 		fs->fs_type = 0;		/* Invalidate the new filesystem object */
-		printf("registering %p to %d\n", fs, vol);
 		FatFs[vol] = fs;		/* Register new fs object */
 	}
 
@@ -3749,10 +3737,7 @@ FRESULT f_open (
 
 	/* Get logical drive number */
 	mode &= FF_FS_READONLY ? FA_READ : FA_READ | FA_WRITE | FA_CREATE_ALWAYS | FA_CREATE_NEW | FA_OPEN_ALWAYS | FA_OPEN_APPEND;
-	printf("mounting\n");
-	// printf("fs->fs_type %d\n", fs->fs_type);
 	res = mount_volume(&path, &fs, mode);
-	printf("mount ok\n");
 	if (res == FR_OK) {
 		dj.obj.fs = fs;
 		INIT_NAMBUF(fs);

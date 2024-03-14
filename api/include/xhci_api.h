@@ -44,7 +44,6 @@ struct umass_request{
 struct sel4_umass_device {
     int umass_id;                       /* umass id */
     bool locked;                        /* mutex */
-    struct umass_request* active_xfer;  /* currently executing xfer */
     ring_handle_t *api_request_ring;    /* xfer queue */
 
     blk_storage_info_t dev_info;
@@ -74,7 +73,7 @@ struct sel4_usb_device {
 /**
  * Initialises required data structures for api
 */
-void api_init(ring_handle_t **kbd, ring_handle_t **mse, ring_handle_t **uts, ring_handle_t **umass);
+void api_init(ring_handle_t **kbd, ring_handle_t **mse, ring_handle_t **uts, blk_queue_handle_t **umass);
 
 /**
  * Handles callback from complete mass storage API request

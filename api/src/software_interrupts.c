@@ -77,8 +77,8 @@ uintptr_t mse_free;
 uintptr_t mse_used;
 uintptr_t uts_free;
 uintptr_t uts_used;
-uintptr_t umass_req_free;
-uintptr_t umass_req_used;
+uintptr_t umass_resp;
+uintptr_t umass_req;
 uintptr_t usb_new_device_free; // unused
 uintptr_t usb_new_device_used; // unused
 
@@ -111,7 +111,7 @@ uintptr_t shared_soft_heap;
 ring_handle_t *kbd_buffer_ring;
 ring_handle_t *mse_buffer_ring;
 ring_handle_t *uts_buffer_ring;
-ring_handle_t *umass_buffer_ring; // unused
+blk_queue_handle_t *umass_buffer_ring; // unused
 ring_handle_t *usb_new_device_ring; // unused
 
 void
@@ -136,7 +136,7 @@ init(void) {
     uts_buffer_ring = kmem_alloc(sizeof(*uts_buffer_ring), 0);
     ring_init(uts_buffer_ring, (ring_buffer_t *)uts_free, (ring_buffer_t *)uts_used, NULL, 0);
     umass_buffer_ring = kmem_alloc(sizeof(*umass_buffer_ring),0);
-    ring_init(umass_buffer_ring, (ring_buffer_t *)umass_req_free, (ring_buffer_t *)umass_req_used, NULL, 0);
+    blk_queue_init(umass_buffer_ring, umass_req, umass_resp, false, 64, 64);
     print_info("Initialised\n");
 }
 

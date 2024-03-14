@@ -80,7 +80,7 @@ Call `./build.sh` with no arguments to see optional flags.
 The driver will require some memory regions to be mapped into both the driver PD and the client PD. Here is a list of the required memory regions:
 - **Free/used buffers** for each communication ring. Suggested size of each of these is around `0x200_000`, but any size can be used. Each of these should be mapped into xhci_stub, software_interrupt, and client PD.
     - `kbd_free/kbd_used`
-    - `umass_req_free/umass_req_used`
+    - `umass_resp/umass_req`
     - `mse_free/mse_used`
     - `uts_free/uts_used`
     - `usb_new_device_free/usb_new_device_used`

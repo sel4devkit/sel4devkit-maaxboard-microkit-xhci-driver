@@ -54,7 +54,6 @@ DSTATUS disk_initialize (
 	DSTATUS stat;
 	int result;
 
-    printf("hard setting disk to 2\n");
     pdrv = 2;
 	switch (pdrv) {
 	case DEV_USB :
@@ -64,7 +63,6 @@ DSTATUS disk_initialize (
 		// translate the reslut code here
 		stat = 0;
 
-        printf("USB OK\n");
 		return RES_OK;
 	}
     printf("NO INIT %d\n", pdrv);
@@ -88,13 +86,13 @@ DRESULT disk_read (
 	int result;
 
     pdrv  = 2;
+	BYTE *temp_buff = calloc(count*512, 1);
 	switch (pdrv) {
 	case DEV_USB :
 		// translate the arguments here
 
-        // printf("enqueueing %d blocks at %d\n", count, sector);
-		result = enqueue_umass_request(5, true, sector, count, buff, NULL);
-		// printf("returned\n");
+		result = enqueue_umass_request(5, true, sector, count, temp_buff, NULL);
+		memcpy(buff, temp_buff, count*512); // dump buffer in shared mem
 
 		// translate the result code here
 		if (result == -1)
@@ -162,8 +160,6 @@ DRESULT disk_ioctl (
 	DRESULT res;
 	int result;
 
-    printf("IOCTL NOT IMPL, cmd 0x%x\n", cmd);
-	printf("CTRL_SYNC 0x%x\n", CTRL_SYNC);
 	switch (pdrv) {
 	case DEV_USB :
 

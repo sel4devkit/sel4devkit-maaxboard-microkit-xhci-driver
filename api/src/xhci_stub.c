@@ -82,8 +82,8 @@ uintptr_t mse_free;
 uintptr_t mse_used;
 uintptr_t uts_free;
 uintptr_t uts_used;
-uintptr_t umass_req_free;
-uintptr_t umass_req_used;
+uintptr_t umass_resp;
+uintptr_t umass_req;
 uintptr_t usb_new_device_free;
 uintptr_t usb_new_device_used;
 
@@ -111,7 +111,7 @@ struct usb_softc *usb_sc, *usb_sc2;
 ring_handle_t *kbd_buffer_ring;
 ring_handle_t *mse_buffer_ring;
 ring_handle_t *uts_buffer_ring;
-ring_handle_t *umass_buffer_ring;
+blk_queue_handle_t *umass_buffer_ring;
 ring_handle_t *usb_new_device_ring;
 
 // reset number of devices
@@ -258,7 +258,7 @@ init(void) {
 	usb_sc->sc_bus->ub_needsexplore    = 1;
 	usb_sc2->sc_bus->ub_needsexplore   = 1;
 
-    // setup complete, busses will still need to be explored for devices to function
+    // setup complete, buses will still need to be explored for devices to function
     usb_discover(usb_sc2);
     usb_discover(usb_sc);
     print_info("Initialised\n");
@@ -272,23 +272,21 @@ init(void) {
 
 void create_umass_xfer()
 {
-    uintptr_t *buffer = 0;
+    uintptr_t buffer;
+    int blkno, id;
+    uint16_t nblks;
     unsigned int len = 0;
-    void *cookie = NULL;
 
     int index;
-    while (!driver_dequeue(umass_buffer_ring->used_ring, (uintptr_t*)&buffer, &len, &cookie)) {
-        active_xfer = (struct umass_request*) buffer;
+    blk_request_code_t code;
 
-        if (active_xfer->read) {
-            /* printf("calling read_block: n: %i    start: %i\n", active_xfer->nblks, active_xfer->blkno); */
-            read_block(active_xfer->umass_id, active_xfer->blkno, active_xfer->nblks, active_xfer->val);
-            /* HEXDUMP("read", active_xfer->val, (512 * active_xfer->nblks)); */
-        } else {
-            /* printf("calling write_block: n: %i    start: %i\n", active_xfer->nblks, active_xfer->blkno); */
-            // HEXDUMP("write", active_xfer->val, (512 * active_xfer->nblks));
-            write_block(active_xfer->umass_id, active_xfer->blkno, active_xfer->nblks, active_xfer->val);
-        }
+    blk_dequeue_req(umass_buffer_ring, &code, &buffer, &blkno, &nblks, &id);
+    if (code == READ_BLOCKS) {
+        read_block(0, blkno, nblks, (void*)buffer);
+    } else if (code == WRITE_BLOCKS) {
+        write_block(0, blkno, nblks, (void*)buffer);
+    } else {
+        printf("unrecognised code = %d\n", code);
     }
 }
 
@@ -312,11 +310,8 @@ notified(microkit_channel ch)
         case 47:
             create_umass_xfer();
             break;
-        /* case 50: */
-        /*     handle_usb_new_device(); */
-        /*     break; */
         case UMASS_COMPLETE:
-            active_xfer->complete = true; // unlock client
+            umass_buffer_ring->req_queue->in_progress = false; //release lock
             break;
         default:
             print_warn("xhci_stub received notification unexpected channel %d\n", ch);

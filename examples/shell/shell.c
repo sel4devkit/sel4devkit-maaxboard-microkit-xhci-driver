@@ -19,15 +19,15 @@ uintptr_t mse_free;
 uintptr_t mse_used;
 uintptr_t uts_free;
 uintptr_t uts_used;
-uintptr_t umass_req_free;
-uintptr_t umass_req_used;
+uintptr_t umass_resp;
+uintptr_t umass_req;
 char* keysDown[8];
 
 /* Pointers to shared_ringbuffers */
 ring_handle_t *kbd_buffer_ring;
 ring_handle_t *mse_buffer_ring;
 ring_handle_t *uts_buffer_ring;
-ring_handle_t *umass_buffer_ring;
+blk_queue_handle_t *umass_buffer_ring;
 
 //shell globals
 #define MAX_KEYS 256
@@ -199,15 +199,15 @@ decode_command() {
                 }
             }
         } else if (!strcmp(parsedArgs[0], "fatls")) {
-            printf("listing root dir\n");
+            printf("listing from %s\n", parsedArgs[1]);
             FRESULT res;
             DIR *dir = malloc(sizeof(DIR));
             FILINFO *fno = malloc(sizeof(FILINFO));
+            res = f_mount(FatFs, "2", 0);
             int nfile, ndir;
             char *path = parsedArgs[1];
 
             res = f_opendir(dir, path);                       /* Open the directory */
-            printf("fstype %d\n", FatFs->fs_type);
             if (res == FR_OK) {
                 nfile = ndir = 0;
                 for (;;) {
@@ -222,9 +222,6 @@ decode_command() {
                     }
                 }
                 f_closedir(dir);
-                printf("fstype %d\n", FatFs->fs_type);
-                printf("%d dirs, %d files.\n", ndir, nfile);
-                printf("fstype %d\n", FatFs->fs_type);
             } else {
                 printf("Failed to open \"%s\". (%u)\n", path, res);
             }
@@ -240,7 +237,6 @@ decode_command() {
                 printf("file error %d\n", fr);
             } else {
                 printf("======= SOF %s =======\n", fileName);
-                /* ms_delay(1000); */
                 while (f_gets(line, sizeof(char) * 100, fp)) {
                     printf("%s\n", line);
                 }
@@ -256,7 +252,7 @@ decode_command() {
 
             char *fileName = parsedArgs[1];
             printf("writing to file '%s'\n", fileName);
-            char *teststr = "thisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatestthisisatest";
+            char *teststr = parsedArgs[2];
             char *buffer = malloc(sizeof(char)*strlen(teststr));
             strncpy(buffer, teststr, strlen(teststr));
             fr = f_mount(FatFs, "2", 0);
@@ -537,9 +533,6 @@ notified(microkit_channel ch) {
         case TOUCHSCREEN_EVENT:
             if (console_state == UTS_TEST)
                 handle_utsEvent();
-            break;
-        case UMASS_COMPLETE:
-            handle_xfer_complete();
             break;
         case NEW_DEVICE_EVENT:
             handle_new_device();

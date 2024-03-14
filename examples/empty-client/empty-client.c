@@ -16,8 +16,8 @@ uintptr_t mse_free;
 uintptr_t mse_used;
 uintptr_t uts_free;
 uintptr_t uts_used;
-uintptr_t umass_req_free;
-uintptr_t umass_req_used;
+uintptr_t umass_resp;
+uintptr_t umass_req;
 
 /* Pointers to shared_ringbuffers */
 ring_handle_t *kbd_buffer_ring;

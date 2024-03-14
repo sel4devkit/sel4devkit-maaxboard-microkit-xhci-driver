@@ -32,8 +32,8 @@
     <!-- API: Map these into PD that is going to use them -->
     <memory_region name="kbd_free" size="0x200_000" page_size="0x200_000"/>
     <memory_region name="kbd_used" size="0x200_000" page_size="0x200_000"/>
-    <memory_region name="umass_req_free" size="0x200_000" page_size="0x200_000"/>
-    <memory_region name="umass_req_used" size="0x200_000" page_size="0x200_000"/>
+    <memory_region name="umass_resp" size="0x200_000" page_size="0x200_000"/>
+    <memory_region name="umass_req" size="0x200_000" page_size="0x200_000"/>
     <memory_region name="mse_free" size="0x200_000" page_size="0x200_000"/>
     <memory_region name="mse_used" size="0x200_000" page_size="0x200_000"/>
     <memory_region name="uts_free" size="0x200_000" page_size="0x200_000"/>
@@ -57,8 +57,8 @@
         <map mr="kbd_used" vaddr="0x4_200_000" perms="rw" cached="true" setvar_vaddr="kbd_used" />
         <map mr="mse_free" vaddr="0x4_800_000" perms="rw" cached="true" setvar_vaddr="mse_free" />
         <map mr="mse_used" vaddr="0x4_a00_000" perms="rw" cached="true" setvar_vaddr="mse_used" />
-        <map mr="umass_req_free" vaddr="0x4_c00_000" perms="rw" cached="true" setvar_vaddr="umass_req_free" />
-        <map mr="umass_req_used" vaddr="0x4_e00_000" perms="rw" cached="true" setvar_vaddr="umass_req_used" />
+        <map mr="umass_resp" vaddr="0x4_c00_000" perms="rw" cached="true" setvar_vaddr="umass_resp" />
+        <map mr="umass_req" vaddr="0x4_e00_000" perms="rw" cached="true" setvar_vaddr="umass_req" />
         <map mr="usb_new_device_free" vaddr="0x5_000_000" perms="rw" cached="true" setvar_vaddr="usb_new_device_free" />
         <map mr="usb_new_device_used" vaddr="0x5_200_000" perms="rw" cached="true" setvar_vaddr="usb_new_device_used" />
         <map mr="uts_free" vaddr="0x5_400_000" perms="rw" cached="true" setvar_vaddr="uts_free" />
@@ -103,8 +103,8 @@
         <map mr="kbd_used" vaddr="0x4_200_000" perms="rw" cached="true" setvar_vaddr="kbd_used" />
         <map mr="mse_free" vaddr="0x4_800_000" perms="rw" cached="true" setvar_vaddr="mse_free" />
         <map mr="mse_used" vaddr="0x4_a00_000" perms="rw" cached="true" setvar_vaddr="mse_used" />
-        <map mr="umass_req_free" vaddr="0x4_c00_000" perms="rw" cached="true" setvar_vaddr="umass_req_free" />
-        <map mr="umass_req_used" vaddr="0x4_e00_000" perms="rw" cached="true" setvar_vaddr="umass_req_used" />
+        <map mr="umass_resp" vaddr="0x4_c00_000" perms="rw" cached="true" setvar_vaddr="umass_resp" />
+        <map mr="umass_req" vaddr="0x4_e00_000" perms="rw" cached="true" setvar_vaddr="umass_req" />
         <map mr="uts_free" vaddr="0x5_400_000" perms="rw" cached="true" setvar_vaddr="uts_free" />
         <map mr="uts_used" vaddr="0x5_600_000" perms="rw" cached="true" setvar_vaddr="uts_used" />
 
@@ -219,8 +219,8 @@
         <map mr="kbd_used" vaddr="0x4_200_000" perms="rw" cached="true" setvar_vaddr="kbd_used" />
         <map mr="mse_free" vaddr="0x4_800_000" perms="rw" cached="true" setvar_vaddr="mse_free" />
         <map mr="mse_used" vaddr="0x4_a00_000" perms="rw" cached="true" setvar_vaddr="mse_used" />
-        <map mr="umass_req_free" vaddr="0x4_c00_000" perms="rw" cached="true" setvar_vaddr="umass_req_free" />
-        <map mr="umass_req_used" vaddr="0x4_e00_000" perms="rw" cached="true" setvar_vaddr="umass_req_used" />
+        <map mr="umass_resp" vaddr="0x4_c00_000" perms="rw" cached="true" setvar_vaddr="umass_resp" />
+        <map mr="umass_req" vaddr="0x4_e00_000" perms="rw" cached="true" setvar_vaddr="umass_req" />
         <map mr="usb_new_device_free" vaddr="0x5_000_000" perms="rw" cached="true" setvar_vaddr="usb_new_device_free" />
         <map mr="usb_new_device_used" vaddr="0x5_200_000" perms="rw" cached="true" setvar_vaddr="usb_new_device_used" />
         <map mr="uts_free" vaddr="0x5_400_000" perms="rw" cached="true" setvar_vaddr="uts_free" />
