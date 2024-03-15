@@ -4,7 +4,7 @@ CC_BSD      := $(TOOLCHAIN)-gcc
 LD_BSD      := $(TOOLCHAIN)-ld
 AS_BSD      := $(TOOLCHAIN)-as
 
-NETBSD_SRC	:= dev_verbose.o subr_device.o subr_autoconf.o usbdi_util.o usbdi.o usbroothub.o sel4_bus_funcs.o dma.o usb.o usb_quirks.o usb_subr.o xhci.o usb_mem.o uhub.o hid.o uhidev.o ukbd.o ums.o uts.o hidms.o hidkbdmap.o ioconf.o tpcalib.o uhid.o umass.o umass_quirks.o umass_scsipi.o scsipi_base.o scsipiconf.o scsiconf.o scsi_base.o scsi_subr.o scsipi_ioctl.o heapsort.o strnvisx.o sd.o dksubr.o subr_disk.o  hexdump.o fdt_openfirm.o fdt_phy.o fdt_subr.o strlist.o ofw_subr.o pmatch.o fdt_reset.o subr_humanize.o 
+NETBSD_SRC	:= dev_verbose.o subr_device.o subr_autoconf.o usbdi_util.o usbdi.o usbroothub.o sel4_bus_funcs.o dma.o usb.o usb_quirks.o usb_subr.o xhci.o usb_mem.o uhub.o hid.o uhidev.o ukbd.o ums.o uts.o hidms.o hidkbdmap.o ioconf.o tpcalib.o uhid.o umass.o umass_quirks.o umass_scsipi.o scsipi_base.o scsipiconf.o scsiconf.o scsi_base.o scsi_subr.o scsipi_ioctl.o heapsort.o strnvisx.o sd.o dksubr.o subr_disk.o  hexdump.o fdt_openfirm.o fdt_phy.o fdt_subr.o strlist.o ofw_subr.o pmatch.o fdt_reset.o subr_humanize.o  shared_queue.o
 FDT_SRC		:= fdt.o fdt_addresses.o fdt_empty_tree.o fdt_ro.o fdt_rw.o fdt_strerror.o fdt_sw.o fdt_wip.o
 UTILS		:= timer.o
 
@@ -48,6 +48,9 @@ $(BUILD_DIR)/%.o: $(SEL4_XHCI_PATH)/api/include/printf/%.c Makefile
 	$(CC_BSD) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/%.o: $(SEL4_XHCI_PATH)/api/include/shared_ringbuffer/%.c Makefile
+	$(CC_BSD) -c $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/%.o: $(SEL4_XHCI_PATH)/api/sDDF/blk/libblksharedqueue/%.c Makefile
 	$(CC_BSD) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/%.o: $(SEL4_XHCI_PATH)/api/src/%.c Makefile

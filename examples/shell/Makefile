@@ -70,9 +70,9 @@ $(BUILD_DIR)/%.o: api/fatfs/source/%.c Makefile
 # step 6: declare files to include in elf file
 # required files here are shared_ringbuffer and xhci_api. hidkbd map is a helper
 # file for decoding keypresses
-FATFS_OBJS			:= 	ff.o ffunicode.o diskio.o shared_queue.o
-SHELL_OBJS 			:=  shell.o hidkbdmap.o shared_ringbuffer.o xhci_api.o hexdump.o $(FATFS_OBJS)
-SNAKE_OBJS 			:=  snake.o
+FATFS_OBJS := ff.o ffunicode.o diskio.o shared_queue.o
+SHELL_OBJS := shell.o hidkbdmap.o shared_ringbuffer.o xhci_api.o hexdump.o $(FATFS_OBJS)
+SNAKE_OBJS := snake.o
 
 # step 7: compile elf
 # This example includes libc. Note the *_OBJS is required to tell the compiler which

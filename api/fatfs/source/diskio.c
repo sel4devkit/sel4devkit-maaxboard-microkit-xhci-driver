@@ -11,6 +11,7 @@
 #include "diskio.h"		/* Declarations of disk functions */
 #include <xhci_api.h>
 #include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 /* Definitions of physical drive number for each drive */
@@ -102,7 +103,6 @@ DRESULT disk_read (
 
 		return res;
 	}
-    printf("huh? %d\n", pdrv);
 
 	return RES_PARERR;
 }
