@@ -190,8 +190,7 @@
         <end pd="xhci_stub" id="9"/>
     </channel>
 
-    <!-- softintr -->
-    <!-- TODO: remove this-->
+    <!-- softintr (included to avoid spurious int) -->
     <channel>
         <end pd="hardware_interrupt" id="7"/>
         <end pd="software_interrupt" id="7"/>
@@ -282,21 +281,21 @@
         <end pd="software_interrupt" id="46"/>
         <end pd="shell" id="46"/>
     </channel>
+    <!-- Mouse interrupt -->
     <channel>
         <end pd="xhci_stub" id="47"/>
         <end pd="shell" id="47"/>
     </channel>
-    <!-- Mouse interrupt -->
+    <!-- UTS interrupt -->
     <channel>
         <end pd="software_interrupt" id="48"/>
         <end pd="shell" id="48"/>
     </channel>
-    <!-- Touchscreen event -->
+    <!-- Umass xfer complete -->
     <channel>
         <end pd="software_interrupt" id="49"/>
         <end pd="xhci_stub" id="49"/>
     </channel>
-    <!-- Umass xfer complete -->
     <channel>
         <end pd="software_interrupt" id="50"/>
         <end pd="shell" id="50"/>

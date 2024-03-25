@@ -1,6 +1,9 @@
 /* This work is Crown Copyright NCSC, 2023. */
 #include <microkit.h>
 #include <shared_ringbuffer/shared_ringbuffer.h>
+#include "wsksymdef.h"
+#include "wsksymvar.h"
+#include <stdint.h>
 #include <xhci_api.h>
 #include <shell.h>
 #include <stdlib.h>
@@ -30,7 +33,7 @@ ring_handle_t *uts_buffer_ring;
 blk_queue_handle_t *umass_buffer_ring;
 
 //shell globals
-#define MAX_KEYS 256
+#define MAX_KEYS 6
 #define CMD_LIMIT 1024
 #define ARGMAX 10
 char cmd[CMD_LIMIT];
@@ -38,11 +41,14 @@ char cmd[CMD_LIMIT];
 //shell history globals
 #define CMD_HISTORY 1024
 static int cursor_index = 0;
+static int cmd_len = 0;
 char *history[CMD_HISTORY];
 static int cmd_hist = -1;
 static int cmd_hist_cursor = 0;
 
 //keyboard specifics
+uint32_t LAYOUT = KB_UK;
+extern const struct wscons_keydesc hidkbd_keydesctab[];
 extern const keysym_t hidkbd_keydesc_us[];
 extern const keysym_t hidkbd_keydesc_uk[];
 #define CODEMASK 0x0ff
@@ -64,33 +70,68 @@ char *pd_name = "shell";
 #define BORDER_VERT		'|'	/* character for vertical border */
 #define BORDER_HORI		'-'	/* character for horizontal border */
 
+
 void print_splash_screen_1(void);
 void print_splash_screen_2(void);
+
+void reset_prompt() {
+    printf("\n"TERM_OK"seL4 test>>> "ANSI_CLEAR);
+}
 
 void
 init_shell() {
     print_splash_screen_2();
     console_state = CONSOLE;
-    printf("\nseL4 test>>> ");
+    reset_prompt();
 }
 
 // function for parsing command words 
-void parseSpace(char* str, char** parsed) 
-{ 
-    int i; 
-  
-    for (i = 0; i < ARGMAX; i++) { 
-        parsed[i] = strsep(&str, " "); 
-  
-        if (parsed[i] == NULL) 
-            break; 
-        if (strlen(parsed[i]) == 0) 
-            i--; 
-    } 
-} 
+size_t split(char *buffer, char *argv[], size_t argv_size)
+{
+    char *p, *start_of_word;
+    int c;
+    enum states { DULL, IN_WORD, IN_STRING } state = DULL;
+    size_t argc = 0;
 
-void reset_prompt() {
-    printf("\nseL4 test>>> ");
+    for (p = buffer; argc < argv_size && *p != '\0'; p++) {
+        c = (unsigned char) *p;
+        switch (state) {
+        case DULL:
+            if (isspace(c)) {
+                continue;
+            }
+
+            if (c == '"') {
+                state = IN_STRING;
+                start_of_word = p + 1; 
+                continue;
+            }
+            state = IN_WORD;
+            start_of_word = p;
+            continue;
+
+        case IN_STRING:
+            if (c == '"') {
+                *p = 0;
+                argv[argc++] = start_of_word;
+                state = DULL;
+            }
+            continue;
+
+        case IN_WORD:
+            if (isspace(c)) {
+                *p = 0;
+                argv[argc++] = start_of_word;
+                state = DULL;
+            }
+            continue;
+        }
+    }
+
+    if (state != DULL && argc < argv_size)
+        argv[argc++] = start_of_word;
+
+    return argc;
 }
 
 void help() {
@@ -123,11 +164,11 @@ decode_command() {
         parsedArgs[i] = NULL;
     }
 
-    if (cursor_index > 0) {
-        cmd[cursor_index] = '\0';
+    if (cmd_len > 0) {
+        cmd[cmd_len] = '\0';
         char hist[100];
         strncpy(hist, cmd, strlen(cmd));
-        parseSpace(cmd, parsedArgs);
+        split(cmd, parsedArgs, ARGMAX);
         if (!strcmp(parsedArgs[0], "init")) {
             init_shell();
         } else if (!strcmp(parsedArgs[0], "disable")) {
@@ -148,7 +189,7 @@ decode_command() {
             console_state = MOUSE_TEST;
             cmd_hist++;
             printf("\n");
-            cursor_index = 0;
+            cursor_index = cmd_len = 0;
             init_mousetest();
             return;
         } else if (!strcmp(parsedArgs[0], "utstest")) {
@@ -159,7 +200,7 @@ decode_command() {
             cmd_hist_cursor = cmd_hist+1;
             memset(cmd, '\0', sizeof(cmd));
             printf("\n");
-            cursor_index = 0;
+            cursor_index = cmd_len = 0;
             init_mousetest();
             return;
         } else if (!strcmp(parsedArgs[0], "read")) {
@@ -245,6 +286,11 @@ decode_command() {
                 printf("======= EOF %s =======\n", fileName);
             }
         } else if (!strcmp(parsedArgs[0], "fatwrite")) {
+            if (parsedArgs[3] != NULL || parsedArgs[1] == NULL || parsedArgs[2] == NULL) {
+                printf("Invalid Args\n");
+                printf("Usage: fatwrite [filename] [text]\n");
+                reset_prompt();
+            }
             FIL *file = malloc(sizeof(FIL));
             UINT bw;
             FRESULT fr;
@@ -290,15 +336,15 @@ decode_command() {
         printf("\n");
     }
     reset_prompt();
-    cursor_index = 0;
+    cursor_index = cmd_len = 0;
 }
 
 void clear_prompt() {
-    printf("\rseL4 test>>>");
+    printf("\r"TERM_OK"seL4 test>>> "ANSI_CLEAR);
     for (int i = 0; i <= strlen(cmd); i++) {
         printf(" ");
     }
-    printf("\rseL4 test>>> ");
+    printf("\r"TERM_OK"seL4 test>>> "ANSI_CLEAR);
 }
 
 void
@@ -313,7 +359,7 @@ scroll_hist(int direction) {
         cmd_hist_cursor = cmd_hist+1;
         strncpy(cmd, "", sizeof(""));
     }
-    cursor_index = strlen(cmd);
+    cmd_len = cursor_index = strlen(cmd);
     printf("%s", cmd);
 }
 
@@ -399,37 +445,31 @@ handle_keypress()
 
     int index;
     while (!driver_dequeue(kbd_buffer_ring->used_ring, (uintptr_t*)&buffer, &len, &cookie)) {
-        //get unique keypress
+        if (((char *) buffer)[2] == 0x1)
+            break; //too many keys pressed
 
+        //get unique keypress (NOTE: does not handle unique release)
         uint8_t keyPressed;
         int unique_id = -1;
         int temp_unique_id = -1;
-        if (((char *) buffer)[2] != 0x1) {
-            for (int i = 2; i < 8; i++) {
-                if (((char*)buffer)[i] != 0x0) {
-                    for (int j = 2; j < 8; j++) {
-                        if (((char*)buffer)[i] == keysDown[j]) {
-                            temp_unique_id = -1;
-                            break;
-                        }
-                        temp_unique_id = i;
+        for (int i = 2; i < MAX_KEYS+2; i++) {
+            if (((char*)buffer)[i] != 0x0) {
+                for (int j = 2; j < 8; j++) {
+                    if (((char*)buffer)[i] == keysDown[j]) {
+                        temp_unique_id = -1;
+                        break;
                     }
-                    if (temp_unique_id != -1)
-                        unique_id = temp_unique_id;
+                    temp_unique_id = i;
                 }
+                if (temp_unique_id != -1)
+                    unique_id = temp_unique_id;
             }
-            keyPressed = (uint8_t)((char*)buffer)[unique_id];
+        }
+        keyPressed = (uint8_t)((char*)buffer)[unique_id];
 
-            //update previous buffer
-            keysDown[2] = ((char*)buffer)[2];
-            keysDown[3] = ((char*)buffer)[3];
-            keysDown[4] = ((char*)buffer)[4];
-            keysDown[5] = ((char*)buffer)[5];
-            keysDown[6] = ((char*)buffer)[6];
-            keysDown[7] = ((char*)buffer)[7];
-        } else {
-            //too many keys pressed
-            break;
+        //update previous buffer
+        for (int i = 2; i < MAX_KEYS+2; i++) {
+            keysDown[i] = ((char*)buffer)[i];
         }
         // stop processing on all keys released
         if (keyPressed == 0)
@@ -440,13 +480,28 @@ handle_keypress()
         uint8_t shiftOrControl = ((char *) buffer)[0];
         int lowercaseAdd = shiftOrControl == 0 ? 1 : 0; // If shift or control held then want to add that value only
         index = 0;
-        for (int i = 0; i < 274; i++) {
-            if (hidkbd_keydesc_us[i] == KC(keyPressed&CODEMASK)) {
-                index = i;
-                break;
+        keysym_t keypress;
+        for (int i = 0; i < 304; i++) {
+            switch (LAYOUT) {
+                case KB_UK:
+                    if (hidkbd_keydesc_uk[i] == KC(keyPressed&CODEMASK)) {
+                        index = i;
+                        keypress = hidkbd_keydesc_uk[i + lowercaseAdd + shiftOrControl];
+                        break;
+                    }
+                case KB_US:
+                default:
+                    if (hidkbd_keydesc_us[i] == KC(keyPressed&CODEMASK)) {
+                        index = i;
+                        keypress = hidkbd_keydesc_us[i + lowercaseAdd + shiftOrControl];
+                    }
+                    break;
             }
+            if (index > 0)
+                break;
         }
-        keysym_t keypress = hidkbd_keydesc_us[index + lowercaseAdd + shiftOrControl];
+        if (index == 0)
+            keypress = hidkbd_keydesc_us[index + lowercaseAdd + shiftOrControl];
         switch (console_state) {
             case SNAKE:
                 *kbd_buffer = keypress;
@@ -454,11 +509,25 @@ handle_keypress()
             case CONSOLE:
                 if (keyPressed == 0)
                     break;
+                int ofs = 0;
+                int i;
                 switch(keypress) {
                     case KS_BackSpace:
                         if (cursor_index > 0) {
                             printf("%c %c", keypress, keypress);
                             cursor_index--;
+                            cmd_len--;
+                            if (cursor_index != cmd_len) {
+                                for(i = cursor_index; i < (cmd_len); i++) {
+                                    cmd[i] = cmd[i+1];
+                                    ofs++;
+                                    printf("%c", cmd[i]);
+                                }
+                                printf(" ");
+                                for (i = 0; i <= ofs; i++) {
+                                    printf("\b");
+                                }
+                            }
                         }
                         break;
                     case KS_Return:
@@ -471,10 +540,35 @@ handle_keypress()
                     case KS_Down:
                         scroll_hist(1);
                         break;
+                    case KS_Left:
+                        if (cursor_index > 0) {
+                            printf("\b");
+                            cursor_index--;
+                        }
+                        break;
+                    case KS_Right:
+                        if (cursor_index < cmd_len) {
+                            printf("%c", cmd[cursor_index]);
+                            cursor_index++;
+                        }
+                        break;
                     default:
                         if (cursor_index < CMD_LIMIT) {
-                            if ((keypress >= KS_a && keypress <= KS_z) || (keypress >= KS_A && keypress <= KS_Z) || (keypress >= KS_0 && keypress <= KS_9) || (keypress >= KS_space && keypress <= KS_slash)) {
+                            if ((keypress >= KS_space && keypress <= KS_z)) {
                                 printf("%c", keypress);
+                                if (cursor_index != cmd_len) {
+                                    for (i = cmd_len; i >= cursor_index; i--) {
+                                        ofs++;
+                                        cmd[i+1] = cmd[i];
+                                    }
+                                    for (i = cursor_index+1; i < cmd_len+1; i++) {
+                                        printf("%c", cmd[i]);
+                                    }
+                                    for (i = 0; i < ofs-1; i++) {
+                                        printf("\b");
+                                    }
+                                }
+                                cmd_len++;
                                 cmd[cursor_index] = keypress;
                                 cursor_index++;
                             }
@@ -505,9 +599,9 @@ void
 init(void) {
     api_init(&kbd_buffer_ring, &mse_buffer_ring, &uts_buffer_ring, &umass_buffer_ring);
     FatFs = malloc(sizeof(*FatFs));
-    FRESULT fr = f_mount(FatFs, "2", 0);
+    FRESULT fr = f_mount(FatFs, "2", 0); // mount usb device (id 2)
     if (fr) {
-        print_info("mount error %d\n", fr);
+        print_warn("mount error %d\n", fr);
     }
     else {
         print_info("Mounted USB succesfully\n");

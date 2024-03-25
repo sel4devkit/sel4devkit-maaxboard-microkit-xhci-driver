@@ -40,7 +40,8 @@ int no_commands = 13;
 #define ANSI_BLUE		"\x1b[1;34m"
 #define ANSI_WHITE		"\x1b[1;37m"
 #define ANSI_CLEAR		"\x1b[0m"
-#define ANSI_BOLD       "\u001b[1m"
+#define TERM_OK         "\x1b[32;1m"
+#define TERM_ERR        "\x1b[31;1m"
 
 #define HEXDUMP(a, b, c) \
     do { \
