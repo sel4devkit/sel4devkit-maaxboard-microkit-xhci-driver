@@ -6,4 +6,4 @@ xhci_build/
 build/
 compile_commands.json
 *.plist
-examples/FatFs_*
+examples/FatFs_Test
