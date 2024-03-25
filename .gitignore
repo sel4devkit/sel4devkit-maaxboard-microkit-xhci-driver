@@ -2,3 +2,8 @@
 netbsd/
 xhci_build/
 *.log
+.cache/
+build/
+compile_commands.json
+*.plist
+examples/FatFs_*

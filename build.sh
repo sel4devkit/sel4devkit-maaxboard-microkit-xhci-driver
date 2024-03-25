@@ -16,7 +16,7 @@ export NETBSD_DIR="$SEL4_XHCI_PATH/netbsd/src"
 
 mkdir -p "$BUILD_DIR"
 
-examples=( "shell" "empty-client" )
+examples=( "shell" "empty-client" "FatFs")
 
 print_examples() {
     echo "EXAMPLES:"

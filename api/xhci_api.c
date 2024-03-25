@@ -44,7 +44,7 @@ void api_init(ring_handle_t **kbd, ring_handle_t **mse, ring_handle_t **uts, blk
     *uts = (ring_handle_t*) malloc(sizeof(ring_handle_t));
     ring_init(*uts, (ring_buffer_t *)uts_free, (ring_buffer_t *)uts_used, NULL, 0);
     *umass = (blk_queue_handle_t*) malloc(sizeof(blk_queue_handle_t));
-    blk_queue_init(*umass, umass_req, umass_resp, false, 64, 64);
+    blk_queue_init(*umass, umass_req, umass_resp, false, BLK_REQ_QUEUE_SIZE, BLK_RESP_QUEUE_SIZE);
 
     // New device event ring
     usb_new_device_ring = malloc(sizeof(*usb_new_device_ring));

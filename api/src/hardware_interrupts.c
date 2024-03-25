@@ -195,9 +195,6 @@ notified(microkit_channel ch) {
             }
             microkit_irq_ack(ch);
             break;
-            while (1) {
-                
-            }
     }
 }
 

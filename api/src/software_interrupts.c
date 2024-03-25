@@ -136,7 +136,7 @@ init(void) {
     uts_buffer_ring = kmem_alloc(sizeof(*uts_buffer_ring), 0);
     ring_init(uts_buffer_ring, (ring_buffer_t *)uts_free, (ring_buffer_t *)uts_used, NULL, 0);
     umass_buffer_ring = kmem_alloc(sizeof(*umass_buffer_ring),0);
-    blk_queue_init(umass_buffer_ring, umass_req, umass_resp, false, 64, 64);
+    blk_queue_init(umass_buffer_ring, umass_req, umass_resp, false, BLK_REQ_QUEUE_SIZE, BLK_RESP_QUEUE_SIZE);
     print_info("Initialised\n");
 }
 
@@ -146,7 +146,7 @@ notified(microkit_channel ch) {
         case 7:
             if (glob_xhci_sc != NULL) {
                 xhci_softintr(&glob_xhci_sc->sc_bus);
-                microkit_notify(17); //discover call
+                /* microkit_notify(17); //discover call */
             } else {
                 print_fatal("sc not defined");
             }

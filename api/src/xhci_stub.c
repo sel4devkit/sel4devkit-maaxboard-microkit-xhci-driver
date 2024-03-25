@@ -285,6 +285,9 @@ void create_umass_xfer()
         read_block(0, blkno, nblks, (void*)buffer);
     } else if (code == WRITE_BLOCKS) {
         write_block(0, blkno, nblks, (void*)buffer);
+    } else if (code == FLUSH) { //for async IO
+        blk_enqueue_resp(umass_buffer_ring, 1, buffer, nblks, 1, id);
+        microkit_notify(47);
     } else {
         printf("unrecognised code = %d\n", code);
     }
