@@ -1,0 +1,4 @@
+[submodule "api/sDDF"]
+	path = "api/sDDF"
+	url = git@github.com:sel4-cap/sDDF.git
+	branch = fs

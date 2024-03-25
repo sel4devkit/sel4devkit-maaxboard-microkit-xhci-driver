@@ -1,0 +1,2 @@
+# Async FatFS example
+This example is adapted from [this LionsOS FatFS example](https://github.com/au-ts/LionsOS/tree/FatFs/examples), and depends on resources used by it. The resources will be pulled by git submodule.
