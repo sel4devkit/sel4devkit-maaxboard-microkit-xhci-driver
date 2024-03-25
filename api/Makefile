@@ -70,16 +70,13 @@ MEM_OBJS		:= mem_handler.o
 
 INC 		:= $(BOARD_DIR)/include \
 				api/sDDF/include \
-				api/include/shared_ringbuffer \
 				api/include \
+				api/include/dma \
 				api/include/wrapper \
+				api/include/shared_ringbuffer \
 				$(NETBSD_DIR)/sys \
 				$(NETBSD_DIR)/sys/external/bsd/libfdt/dist \
 				$(NETBSD_DIR)/mach_include \
-				api/include/bus \
-				api/include/dma \
-				api/include/printf \
-				api/include/timer \
 				api/utils/ \
 
 INC_PARAMS	=$(foreach d, $(INC), -I$d)

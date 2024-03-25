@@ -45,8 +45,17 @@ CLIENT_INC_PARAMS=$(foreach d, $(CLIENT_INC), -I$d)
 
 # step 2: declare compilation flags
 # included here are the recommended compilation flags
-CLIENT_CFLAGS := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 $(WARNINGS) $(CLIENT_INC_PARAMS) -I$(BOARD_DIR)/include --specs=libc/picolibc.specs
-# EXAMPLE EMPTY API USER
+CLIENT_CFLAGS := -mcpu=$(CPU) \
+				-mstrict-align \
+				-nostdlib \
+				-nolibc \
+				-ffreestanding \
+				-g3 \
+				-O3 \
+				$(WARNINGS) \
+				$(CLIENT_INC_PARAMS) \
+				--specs=libc/picolibc.specs
+# EXAMPLE API USER
 
 # step 3: declare linker flags
 # the board library is required as a loader flag
