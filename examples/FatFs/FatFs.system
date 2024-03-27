@@ -254,6 +254,16 @@
         <end pd="FatFs" id="2"/>
         <end pd="xhci_stub" id="47"/>
     </channel>
+    <!-- device init -->
+    <channel>
+        <end pd="Client" id="45"/>
+        <end pd="xhci_stub" id="45"/>
+    </channel>
+    <!-- driver OK -->
+    <channel>
+        <end pd="Client" id="60"/>
+        <end pd="xhci_stub" id="60"/>
+    </channel>
 
 <!-- Avoid the xhci-stub get killed by Attempted to invoke a null cap -->
     <channel>

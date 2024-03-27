@@ -102,14 +102,10 @@ void test() {
 }
 
 void init(void) {
-    printf("Init FiberFlow\n");
     sddf_fs_init(request_queue);
     sddf_fs_init(response_queue);
-    printf("sddf fs inited\n");
     Fiber_init(main_thread);
-    printf("creating event thread\n");
     event_thread = Fiber_create(Coroutine_STACK, Coroutine_STACKSIZE, test);
-    printf("switching to event thread\n");
     Fiber_switch(event_thread);
 }
 
@@ -117,12 +113,8 @@ void notified(microkit_channel ch) {
     // printf("FS client IRQ received: %d\n", ch);
     if (ch == 1) {
         Fiber_switch(event_thread);
-    }
-    switch (ch) {
-        case 16: // fatfs stuff
-            // blk_dequeue_req();
-            printf("legit just received this: %d\n", ch);
-            break;
+    } else {
+        printf("unrecognised IRQ\n", ch);
     }
 }
 

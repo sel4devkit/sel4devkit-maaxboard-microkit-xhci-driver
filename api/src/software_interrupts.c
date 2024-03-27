@@ -151,6 +151,8 @@ notified(microkit_channel ch) {
                 print_fatal("sc not defined");
             }
             break;
+        default:
+            print_warn("soft interrupt unexpected IRQ %d\n", ch);
     }
 }
 
