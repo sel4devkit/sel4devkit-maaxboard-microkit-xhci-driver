@@ -18,6 +18,7 @@
 #define NEW_DEVICE_EVENT        45
 #define KEYBOARD_EVENT          46
 #define MOUSE_EVENT             48
+#define UMASS_FLUSH             47
 #define UMASS_COMPLETE          49
 #define TOUCHSCREEN_EVENT       50
 #define UMASS_COMPLETE_1        51

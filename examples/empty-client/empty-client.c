@@ -23,7 +23,7 @@ uintptr_t umass_req;
 ring_handle_t *kbd_buffer_ring;
 ring_handle_t *mse_buffer_ring;
 ring_handle_t *uts_buffer_ring;
-ring_handle_t *umass_buffer_ring;
+blk_queue_handle_t *umass_buffer_ring;
 
 //keyboard specifics (optional for decoding keypress)
 extern const keysym_t hidkbd_keydesc_us[];
@@ -98,9 +98,6 @@ void
 notified(microkit_channel ch) {
     switch(ch) {
 /* ----------------API NOTIFICATIONS---------- */
-        case INIT:
-            printf("Driver initialised in client\n");
-            break;
         case KEYBOARD_EVENT:
             handle_keypress();
             break;
@@ -110,13 +107,13 @@ notified(microkit_channel ch) {
         case TOUCHSCREEN_EVENT:
             printf("touchscreen event not implemented\n");
             break;
-        case UMASS_COMPLETE:
-            handle_xfer_complete();
-            break;
         case NEW_DEVICE_EVENT:
             handle_new_device();
             //print out devices here because they haven't been initialised before this point
             print_devs();
+            break;
+        case INIT:
+            printf("Driver initialised in client\n");
             break;
 /* ---------------------------------------- */
         default:

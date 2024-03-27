@@ -240,8 +240,8 @@
 
     <!-- Driver initialise complete -->
     <channel>
-        <end pd="xhci_stub" id="40"/>
-        <end pd="example_client" id="40"/>
+        <end pd="xhci_stub" id="60"/>
+        <end pd="example_client" id="60"/>
     </channel>
     <!-- USB Device Connect Event -->
     <channel>
@@ -253,22 +253,17 @@
         <end pd="software_interrupt" id="46"/>
         <end pd="example_client" id="46"/>
     </channel>
-    <!-- blank -->
-    <channel>
-        <end pd="xhci_stub" id="47"/>
-        <end pd="example_client" id="47"/>
-    </channel>
     <!-- Mouse interrupt -->
     <channel>
         <end pd="software_interrupt" id="48"/>
         <end pd="example_client" id="48"/>
     </channel>
-    <!-- Touchscreen event -->
+    <!-- Umass xfer complete -->
     <channel>
         <end pd="software_interrupt" id="49"/>
-        <end pd="example_client" id="49"/>
+        <end pd="xhci_stub" id="49"/>
     </channel>
-    <!-- Umass xfer complete -->
+    <!-- Touchscreen event -->
     <channel>
         <end pd="software_interrupt" id="50"/>
         <end pd="example_client" id="50"/>

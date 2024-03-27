@@ -58,7 +58,7 @@ $(BUILD_DIR)/%.o: examples/empty-client/%.c Makefile
 # step 6: declare object files to include in elf file
 # required files here are shared_ringbuffer and xhci_api. hidkbd map is a helper
 # file for decoding keypresses
-CLIENT_OBJS :=  empty-client.o hidkbdmap.o shared_ringbuffer.o xhci_api.o
+CLIENT_OBJS :=  empty-client.o hidkbdmap.o shared_queue.o shared_ringbuffer.o xhci_api.o
 
 # step 7: compile elf
 # This example includes libc. Note the *_OBJS is required to tell the compiler which
