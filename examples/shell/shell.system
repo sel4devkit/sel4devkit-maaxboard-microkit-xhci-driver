@@ -148,46 +148,10 @@
         <end pd="xhci_stub" id="0"/>
     </channel>
 
-    <!-- usb discover call (hotplugging) -->
-    <channel>
-        <end pd="software_interrupt" id="17"/>
-        <end pd="xhci_stub" id="17"/>
-    </channel>
-
-    <!--share interrupt functions with xhci_stub-->
-    <channel>
-        <end pd="software_interrupt" id="8"/>
-        <end pd="xhci_stub" id="8"/>
-    </channel>
-    
-    <!--share data structures with software interrupt-->
-    <channel>
-        <end pd="software_interrupt" id="1"/>
-        <end pd="xhci_stub" id="1"/>
-    </channel>
+    <!--share xhci_sc with software interrupt-->
     <channel>
         <end pd="software_interrupt" id="2"/>
         <end pd="xhci_stub" id="2"/>
-    </channel>
-    <channel>
-        <end pd="software_interrupt" id="3"/>
-        <end pd="xhci_stub" id="3"/>
-    </channel>
-    <channel>
-        <end pd="software_interrupt" id="4"/>
-        <end pd="xhci_stub" id="4"/>
-    </channel>
-    <channel>
-        <end pd="software_interrupt" id="5"/>
-        <end pd="xhci_stub" id="5"/>
-    </channel>
-    <channel>
-        <end pd="software_interrupt" id="6"/>
-        <end pd="xhci_stub" id="6"/>
-    </channel>
-    <channel>
-        <end pd="software_interrupt" id="9"/>
-        <end pd="xhci_stub" id="9"/>
     </channel>
 
     <!-- softintr (included to avoid spurious int) -->
@@ -195,6 +159,19 @@
         <end pd="hardware_interrupt" id="7"/>
         <end pd="software_interrupt" id="7"/>
     </channel>
+
+    <!--share interrupt functions with xhci_stub-->
+    <channel>
+        <end pd="software_interrupt" id="8"/>
+        <end pd="xhci_stub" id="8"/>
+    </channel>
+
+    <!-- usb discover call (hotplugging) -->
+    <channel>
+        <end pd="software_interrupt" id="17"/>
+        <end pd="xhci_stub" id="17"/>
+    </channel>
+
     <!-- end of driver required functionality -->
 
     <!-- !EXAMPLE API USER:

@@ -105,7 +105,7 @@ CLIENT_INC_PARAMS=$(foreach d, $(CLIENT_INC), -I$d)
 
 # step 2: declare compilation flags
 # included here are the recommended compilation flags
-CLIENT_CFLAGS := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 $(WARNINGS) $(CLIENT_INC_PARAMS) -I$(BOARD_DIR)/include --specs=libc/picolibc.specs
+CLIENT_CFLAGS := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 $(WARNINGS) $(CLIENT_INC_PARAMS) --specs=libc/picolibc.specs
 
 $(BUILD_DIR)/%.o: $(FF_DIR)/ff15/source/%.c Makefile
 	$(CC_CLIENT) -c $(CLIENT_CFLAGS) $< -o $@

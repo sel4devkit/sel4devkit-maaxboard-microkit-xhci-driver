@@ -43,14 +43,6 @@ enum channel_type {
     PIPE_METHOD_CHANNEL = 11
 };
 
-enum init_methods {
-    ROOTHUB_CTRL,
-    XHCI_ROOT_INTR,
-    XHCI_DEVICE_CTRL,
-    XHCI_DEVICE_ISOC,
-    XHCI_DEVICE_BULK,
-    XHCI_DEVICE_INTR
-};
 
 struct pipe_method_rpc {
     struct usbd_pipe *pipe;

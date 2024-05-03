@@ -1,7 +1,6 @@
 #ifndef _XHCI_API_
 #define _XHCI_API_
 
-#include <stddef.h>
 #include <stdbool.h>
 #include <shared_ringbuffer/shared_ringbuffer.h>
 #include <sddf/blk/shared_queue.h>
@@ -85,6 +84,11 @@ void handle_xfer_complete();
  * Handles new device connection
 */
 void handle_new_device();
+
+/**
+    Get string class of device
+*/
+char* get_class(int dev_id);
 
 /**
  * Enqueues new request to device

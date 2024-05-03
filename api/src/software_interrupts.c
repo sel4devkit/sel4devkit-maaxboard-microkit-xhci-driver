@@ -90,17 +90,7 @@ bool pipe_thread;
 //extern variables
 struct xhci_softc *glob_xhci_sc	= NULL;
 struct usbd_bus_methods *xhci_bus_methods_ptr;
-struct usbd_pipe_methods *xhci_root_intr_pointer;
-struct usbd_pipe_methods *xhci_root_intr_pointer_other;
-struct usbd_pipe_methods *device_ctrl_pointer;
-struct usbd_pipe_methods *device_ctrl_pointer_other;
-struct usbd_pipe_methods *device_intr_pointer;
-struct usbd_pipe_methods *device_intr_pointer_other;
 struct intr_ptrs_holder *intr_ptrs;
-struct umass_wire_methods *umass_bbb_methods_pointer;
-struct umass_wire_methods *umass_bbb_methods_pointer_other;
-struct usbd_pipe_methods *device_bulk_pointer;
-struct usbd_pipe_methods *device_bulk_pointer_other;
 int cold = 1;
 
 // shared heap base with client
@@ -119,12 +109,7 @@ init(void) {
 
     config_init();
     cold = 0;
-    xhci_bus_methods_ptr = get_bus_methods();
-    xhci_root_intr_pointer = get_root_intr_methods();
-    device_ctrl_pointer = get_device_methods();
-    device_intr_pointer = get_device_intr_methods();
-    umass_bbb_methods_pointer = get_umass_bbb_methods();
-    device_bulk_pointer = get_device_bulk_methods();
+
     pipe_thread = false;
     sel4_dma_init(dma_cp_paddr, dma_base, dma_base + 0x200000);
     initialise_and_start_timer(timer_base);
@@ -146,7 +131,6 @@ notified(microkit_channel ch) {
         case 7:
             if (glob_xhci_sc != NULL) {
                 xhci_softintr(&glob_xhci_sc->sc_bus);
-                /* microkit_notify(17); //discover call */
             } else {
                 print_fatal("sc not defined");
             }
@@ -158,37 +142,11 @@ notified(microkit_channel ch) {
 
 microkit_msginfo
 protected(microkit_channel ch, microkit_msginfo msginfo) {
-    struct set_cfg *cfg;
     switch (ch) {
-        case 1:
-            xhci_root_intr_pointer_other = (struct usbd_pipe_methods *) microkit_msginfo_get_label(msginfo);
-            print_debug("sending xhci_root_intr_pointer: %p\n", xhci_root_intr_pointer);
-            return seL4_MessageInfo_new((uint64_t) xhci_root_intr_pointer, 1, 0, 0);
-            break;
         case 2:
+            // share xhci softc for use with interrupts
             glob_xhci_sc = (struct xhci_softc *) microkit_msginfo_get_label(msginfo);
             break;
-        case 3:
-            device_ctrl_pointer_other = (struct usbd_pipe_methods *) microkit_msginfo_get_label(msginfo);
-            print_debug("sending device_ctrl_pointer: %p\n", device_ctrl_pointer);
-            return seL4_MessageInfo_new((uint64_t) device_ctrl_pointer, 1, 0, 0);
-        case 4:
-            device_intr_pointer_other = (struct usbd_pipe_methods *) microkit_msginfo_get_label(msginfo);
-            print_debug("sending device_intr_pointer: %p\n", device_intr_pointer);
-            return seL4_MessageInfo_new((uint64_t) device_intr_pointer, 1, 0, 0);
-        case 5:
-            usbd_delay_ms(0, 100);
-            print_debug("doing set_config_index in softintr\n");
-            cfg = (struct set_cfg*) microkit_msginfo_get_label(msginfo);
-            cfg->dev->ud_quirks = get_quirks(); //assume no quirks
-            print_debug("config dev = %p\n", cfg->dev);
-            usbd_status err = usbd_set_config_index(cfg->dev, cfg->confi, cfg->msg);
-            print_debug("reached end of set_conf_index\n");
-            return seL4_MessageInfo_new(err,1,0,0);
-        case 6:
-            umass_bbb_methods_pointer_other = (struct umass_wire_methods *) microkit_msginfo_get_label(msginfo);
-            print_debug("sending umass_bbb_methods_pointer: %p\n", umass_bbb_methods_pointer);
-            return seL4_MessageInfo_new((uint64_t) umass_bbb_methods_pointer, 1, 0, 0);
         case 8:
             // pass interrupt structures so callback can be used without hardcoding
             intr_ptrs = kmem_alloc(sizeof(struct intr_ptrs_holder), 0);
@@ -202,10 +160,6 @@ protected(microkit_channel ch, microkit_msginfo msginfo) {
             intr_ptrs->umass_scsipi_cb  = get_umass_scsipi_cb();
             intr_ptrs->umass_null_cb    = get_umass_null_cb();
             return seL4_MessageInfo_new((uint64_t) intr_ptrs, 1, 0, 0);
-        case 9:
-            device_bulk_pointer_other = (struct usbd_pipe_methods *) microkit_msginfo_get_label(msginfo);
-            print_debug("sending device_bulk_pointer: %p\n", device_bulk_pointer);
-            return seL4_MessageInfo_new((uint64_t) device_bulk_pointer, 1, 0, 0);
         default:
             print_warn("softintr unexpected channel %d\n", ch);
     }
