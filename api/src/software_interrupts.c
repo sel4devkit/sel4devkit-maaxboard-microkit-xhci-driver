@@ -37,6 +37,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define SOFTC_SHARE 1
+#define INTR_SHARE 2
+#define HOTPLUG 3;
+
 // Setup for getting printf functionality working {{{
 static int
 libc_microkit_putc(char c, FILE *file)
@@ -101,7 +105,7 @@ uintptr_t shared_soft_heap;
 ring_handle_t *kbd_buffer_ring;
 ring_handle_t *mse_buffer_ring;
 ring_handle_t *uts_buffer_ring;
-blk_queue_handle_t *umass_buffer_ring; // unused
+blk_queue_handle_t *umass_buffer_ring;
 ring_handle_t *usb_new_device_ring; // unused
 
 void
@@ -131,6 +135,7 @@ notified(microkit_channel ch) {
         case 7:
             if (glob_xhci_sc != NULL) {
                 xhci_softintr(&glob_xhci_sc->sc_bus);
+                //microkit_notify(HOTPLUG);
             } else {
                 print_fatal("sc not defined");
             }
@@ -143,11 +148,11 @@ notified(microkit_channel ch) {
 microkit_msginfo
 protected(microkit_channel ch, microkit_msginfo msginfo) {
     switch (ch) {
-        case 2:
+        case SOFTC_SHARE:
             // share xhci softc for use with interrupts
             glob_xhci_sc = (struct xhci_softc *) microkit_msginfo_get_label(msginfo);
             break;
-        case 8:
+        case INTR_SHARE:
             // pass interrupt structures so callback can be used without hardcoding
             intr_ptrs = kmem_alloc(sizeof(struct intr_ptrs_holder), 0);
             intr_ptrs->ukbd             = &ukbd_intr;

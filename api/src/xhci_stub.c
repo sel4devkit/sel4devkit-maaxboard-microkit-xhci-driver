@@ -34,6 +34,12 @@
 #include <dev/fdt/fdtvar.h>
 #include <stdio.h>
 
+// channels
+#define SOFTC_SHARE_HARD 0
+#define SOFTC_SHARE_SOFT 1
+#define INTR_SHARE 2
+#define HOTPLUG 3
+
 // Setup for getting printf functionality working {{{
 static int
 libc_microkit_putc(char c, FILE *file)
@@ -129,7 +135,7 @@ init(void) {
 
     // initialise structures. Communicate with software interrupt pd to get back all required data structures
     xhci_bus_methods_ptr            = (struct usbd_bus_methods *) get_bus_methods();
-    intr_ptrs                       = (struct intr_ptrs_holder *) microkit_msginfo_get_label(microkit_ppcall(8, seL4_MessageInfo_new(0,0,0,0)));
+    intr_ptrs                       = (struct intr_ptrs_holder *) microkit_msginfo_get_label(microkit_ppcall(INTR_SHARE, seL4_MessageInfo_new(0,0,0,0)));
 
 	int offset = 0x6378; // DEBUG: set to -1 to actually traverse tree
     int startoffset = 0;
@@ -180,8 +186,8 @@ init(void) {
     struct xhci_softc *sc_xhci = kmem_alloc(sizeof(struct xhci_softc), 0);
     glob_xhci_sc = sc_xhci;
     sc_xhci->sc_ioh=xhci_base;
-    microkit_ppcall(0, seL4_MessageInfo_new((uint64_t) sc_xhci,1,0,0));
-    microkit_ppcall(2, seL4_MessageInfo_new((uint64_t) sc_xhci,1,0,0));
+    microkit_ppcall(SOFTC_SHARE_HARD, seL4_MessageInfo_new((uint64_t) sc_xhci,1,0,0));
+    microkit_ppcall(SOFTC_SHARE_SOFT, seL4_MessageInfo_new((uint64_t) sc_xhci,1,0,0));
 	bus_space_tag_t iot = kmem_alloc(sizeof(bus_space_tag_t), 0);
     sc_xhci->sc_iot=iot;
 
@@ -251,7 +257,7 @@ void
 notified(microkit_channel ch)
 {
     switch (ch) {
-        case 17: // hotplug
+        case HOTPLUG: // hotplug
             // do a discover
             if (usb_sc->sc_bus->ub_needsexplore || usb_sc2->sc_bus->ub_needsexplore) {
                 printf("Discover on USB3...\n");
@@ -264,7 +270,7 @@ notified(microkit_channel ch)
                 print_debug("USB2 discover finished\n");
             }
             break;
-        case 47:
+        case UMASS_FLUSH:
             create_umass_xfer();
             break;
         case UMASS_COMPLETE:

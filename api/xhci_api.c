@@ -99,10 +99,6 @@ int enqueue_umass_request(int dev_id, bool read, int blkno, int nblks, void* val
 }
 
 int execute_next(struct sel4_usb_device* dev, struct umass_request* xfer) {
-    uintptr_t *buffer = 0;
-    unsigned int len = 0;
-    void *cookie = NULL;
-
     // printf("xfer_id: %i    blkno: %i    nblks: %i\n", xfer->xfer_id, xfer->blkno, xfer->nblks);
 
     blk_request_code_t code = WRITE_BLOCKS;

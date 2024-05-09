@@ -150,8 +150,8 @@
 
     <!--share xhci_sc with software interrupt-->
     <channel>
-        <end pd="software_interrupt" id="2"/>
-        <end pd="xhci_stub" id="2"/>
+        <end pd="software_interrupt" id="1"/>
+        <end pd="xhci_stub" id="1"/>
     </channel>
 
     <!-- softintr (included to avoid spurious int) -->
@@ -162,14 +162,14 @@
 
     <!--share interrupt functions with xhci_stub-->
     <channel>
-        <end pd="software_interrupt" id="8"/>
-        <end pd="xhci_stub" id="8"/>
+        <end pd="software_interrupt" id="2"/>
+        <end pd="xhci_stub" id="2"/>
     </channel>
 
     <!-- usb discover call (hotplugging) -->
     <channel>
-        <end pd="software_interrupt" id="17"/>
-        <end pd="xhci_stub" id="17"/>
+        <end pd="software_interrupt" id="3"/>
+        <end pd="xhci_stub" id="3"/>
     </channel>
 
     <!-- end of driver required functionality -->
