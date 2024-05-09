@@ -137,14 +137,14 @@ init(void) {
     bus_size_t addr, size;
 
     if (offset < 0) {
-        print_debug("Traversing FDT to find dwc3 node at 0x%x...\n", xhci_base);
+        print_info("Traversing FDT to find dwc3 node at 0x%x...\n", xhci_base);
         for (offset = fdt_next_node((void*)fdt, startoffset, NULL);
             offset >= 0;
             offset = fdt_next_node((void*)fdt, offset, NULL)) {
             fdtbus_get_reg(fdtbus_offset2phandle(offset), 0, &addr, &size);
             if (addr == xhci_base) {
                 dwc3_phandle = fdtbus_offset2phandle(offset);
-                print_debug("offset: 0x%x\n", offset); // DEBUG: plug this into the offset value to speed up initialisation
+                print_info("offset: 0x%x\n", offset); // DEBUG: plug this into the offset value to speed up initialisation
                 break;
             } else if (offset < 0) {
                 if (offset == -FDT_ERR_NOTFOUND) {

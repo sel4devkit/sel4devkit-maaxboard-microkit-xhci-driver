@@ -185,7 +185,10 @@ void print_device(int id)
         printf("%i: %s,\tUSB Revision %x.%x\n", dev->id, get_class(dev->ifaceClass), (dev->rev>>8)&0xff, (dev->rev>>0)&0xff);
     else
         printf("%i: %s,\tUSB Revision %x.%x\n", dev->id, get_class(dev->class), (dev->rev>>8)&0xff, (dev->rev>>0)&0xff);
-    printf(" - %s %s\n", dev->vendor, dev->product);
+    if (dev->serial)
+        printf(" - %s %s (serial %s)\n", dev->vendor, dev->product, dev->serial);
+    else
+        printf(" - %s %s\n", dev->vendor, dev->product);
     printf(" - Vendor: 0x%04x Product: 0x%04x\n", dev->vendorid, dev->productid);
     printf(" - PacketSize: %d Configurations: %d\n", (int) dev->mps, dev->num_configs);
     if (dev->class == 0)
