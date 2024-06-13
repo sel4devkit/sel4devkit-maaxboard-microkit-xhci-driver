@@ -31,13 +31,14 @@ Specifically, we have provided support for these USB devices:
 
 ## Requirements
 - This driver expects to have the accompanying NetBSD fork.
-  - Use branch 'api' for netbsd
+  - Use branch 'trunk' for netbsd
 - This driver assumes the existence of a built microkit sdk.
 - This driver assumes a pre-built microkit libc (found in this [repository](https://github.com/sel4-cap/picolibc/tree/linker_crt))
     - Use branch linker_crt
     - See below for build and use instructions
 
 ## Building
+### Building picolibc
 This project requires picolibc. To build and use picolibc navigate to the picolibc folder (pulled by the manifest) and run
 ```
 cd <path-to-mk-manifest>/picolibc
@@ -49,6 +50,18 @@ Then, copy the created files into the `libc` folder of `xhci-stub/`
 cp picolib-microkit/picolibc.specs picolib-microkit/newlib/libc.a picolib-microkit/newlib/libm.a <path-to-mk-manifest>/xhci-stub/libc/.
 ```
 
+### Initialise sddf submodule
+Navigate to the sDDF folder
+```
+cd <path-to-mk-manifest>/xhci_stub/api/sDDF
+```
+
+Initialise submodule
+```
+git submodule update --init --recursive
+```
+
+### Build example
 To build this driver, use the `build.sh` bash script. The script assumes the driver has been pulled using the microkit manifest and therefore assumes the directory structure will mirror this.
 
 The `MICROKIT_DIR` environment variable will need to be changed to equal the location of the "microkit" directory. 
