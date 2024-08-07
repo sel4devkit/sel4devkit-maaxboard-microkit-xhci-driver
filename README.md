@@ -2,6 +2,8 @@
 
 This repo contains the code for the xHCI driver developed by Capgemini. This is not intended to be standalone and should be used by the [Microkit manifest](https://github.com/sel4-cap/microkit-manifest).
 
+The project should also be built inside this [docker environment](https://github.com/sel4-cap/sel4devkit-maaxboard-docker-dev-env).
+
 Specifically, we have provided support for these USB devices:
 - Keyboard
 - Mouse
