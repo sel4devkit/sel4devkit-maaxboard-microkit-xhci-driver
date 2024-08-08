@@ -3,8 +3,8 @@ export MICROKIT_BOARD="maaxboard"
 export MICROKIT_CONFIG="debug"
 export MICROKIT_TOOL="python -m microkit"
 
-export MICROKIT_DIR="$HOME/mk-manifest/microkit" #! change this to microkit directory
-export MICROKIT_SDK="$MICROKIT_DIR/release/microkit-sdk-1.2.6"
+export MICROKIT_DIR="$HOME/xhci-manifest/microkit" #! change this to microkit directory
+export MICROKIT_SDK="$MICROKIT_DIR/out/microkit-sdk-1.2.6"
 export BOARD_DIR="$MICROKIT_SDK/board/$MICROKIT_BOARD/$MICROKIT_CONFIG"
 
 export PYTHONPATH="$MICROKIT_DIR/tool"
