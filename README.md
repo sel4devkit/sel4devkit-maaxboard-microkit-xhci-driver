@@ -1,6 +1,6 @@
 # seL4 USB 3.0 (xHCI) driver
 
-This repo contains the code for the xHCI driver developed by Capgemini. This is not intended to be standalone and should be used by the [Microkit manifest](https://github.com/sel4-cap/microkit-manifest).
+This repo contains the code for the xHCI driver developed by Capgemini. This is not intended to be standalone and should be used by the [xHCI Manifest](https://github.com/sel4devkit/sel4devkit-maaxboard-microkit-xhci-manifest).
 
 The project should also be built inside this [Docker environment](https://github.com/sel4-cap/sel4devkit-maaxboard-docker-dev-env).
 
