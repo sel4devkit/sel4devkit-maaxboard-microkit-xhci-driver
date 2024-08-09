@@ -98,7 +98,7 @@ CFLAGS_API 		:= -mcpu=$(CPU) \
 				-ffreestanding \
 				-g3 \
 				$(WARNINGS) \
-				--specs=libc/picolibc.specs \
+				--specs=${LIBC_DIR}/picolibc.specs \
 				$(INC_PARAMS) \
 				-DSEL4
 
@@ -107,7 +107,7 @@ CFLAGS_API := $(CFLAGS_API) -DSEL4_USB_DEBUG
 endif
 
 LD_APIFLAGS := -L$(BOARD_DIR)/lib 
-LIBS_API 	:= libc/libgcc.a libc/libc.a libc/libm.a libc/libgcc.a -lmicrokit -Tmicrokit.ld
+LIBS_API 	:= ${LIBC_DIR}/libgcc.a ${LIBC_DIR}/libc.a ${LIBC_DIR}/libm.a ${LIBC_DIR}/libgcc.a -lmicrokit -Tmicrokit.ld
 
 API_IMAGES := xhci_stub.elf hardware.elf software.elf mem_handler.elf 
 

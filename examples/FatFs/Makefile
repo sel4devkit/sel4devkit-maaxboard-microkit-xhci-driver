@@ -52,7 +52,7 @@ TOOLCHAIN_CLI := aarch64-none-elf
 
 CC_CLIENT := $(TOOLCHAIN_CLI)-gcc
 LD_CLIENT := $(TOOLCHAIN_CLI)-ld
-LIBS_CLIENT := libc/libgcc.a libc/libc.a libc/libm.a libc/libgcc.a -lmicrokit -Tmicrokit.ld
+LIBS_CLIENT := ${LIBC_DIR}/libgcc.a ${LIBC_DIR}/libc.a ${LIBC_DIR}/libm.a ${LIBC_DIR}/libgcc.a -lmicrokit -Tmicrokit.ld
 MICROKIT_TOOL ?= $(MICROKIT_SDK)/bin/microkit
 SDDF := api/sDDF
 SDDF_BLK_SHAREDQUEUE := $(SDDF)/blk/libblksharedqueue
@@ -105,7 +105,7 @@ CLIENT_INC_PARAMS=$(foreach d, $(CLIENT_INC), -I$d)
 
 # step 2: declare compilation flags
 # included here are the recommended compilation flags
-CLIENT_CFLAGS := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 $(WARNINGS) $(CLIENT_INC_PARAMS) --specs=libc/picolibc.specs
+CLIENT_CFLAGS := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 $(WARNINGS) $(CLIENT_INC_PARAMS) --specs=${LIBC_DIR}/picolibc.specs
 
 $(BUILD_DIR)/%.o: $(FF_DIR)/ff15/source/%.c Makefile
 	$(CC_CLIENT) -c $(CLIENT_CFLAGS) $< -o $@
@@ -154,6 +154,6 @@ all: $(IMAGE_FILE)
 $(IMAGE_FILE) $(REPORT_FILE): $(addprefix $(BUILD_DIR)/, $(IMAGES)) examples/shell/shell.system
 	$(MICROKIT_TOOL) examples/FatFs/FatFs.system --search-path $(BUILD_DIR) --board $(MICROKIT_BOARD) --config $(MICROKIT_CONFIG) -o $(IMAGE_FILE) -r $(REPORT_FILE)
 
+# step 10: (optional) clean
 clean:
-	rm -f $(BUILD_DIR)/*.o $(BUILD_DIR)/*.elf $(BUILD_DIR)/.depend* $(BUILD_DIR)/*.d
-	find . -name \*.o |xargs --no-run-if-empty rm
+	sudo rm -rf $(BUILD_DIR)

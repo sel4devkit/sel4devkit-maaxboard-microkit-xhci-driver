@@ -35,7 +35,7 @@ TOOLCHAIN_CLI := aarch64-none-elf
 
 CC_CLIENT := $(TOOLCHAIN_CLI)-gcc
 LD_CLIENT := $(TOOLCHAIN_CLI)-ld
-LIBS_CLIENT := libc/libgcc.a libc/libc.a libc/libm.a libc/libgcc.a -lmicrokit -Tmicrokit.ld
+LIBS_CLIENT := ${LIBC_DIR}/libgcc.a ${LIBC_DIR}/libc.a ${LIBC_DIR}/libm.a ${LIBC_DIR}/libgcc.a -lmicrokit -Tmicrokit.ld
 
 # step 1: declare includes
 # all of these includes are required for compilation of api
@@ -54,7 +54,7 @@ CLIENT_CFLAGS := -mcpu=$(CPU) \
 				-O3 \
 				$(WARNINGS) \
 				$(CLIENT_INC_PARAMS) \
-				--specs=libc/picolibc.specs
+				--specs=${LIBC_DIR}/picolibc.specs
 # EXAMPLE API USER
 
 # step 3: declare linker flags
@@ -107,5 +107,4 @@ $(IMAGE_FILE) $(REPORT_FILE): $(addprefix $(BUILD_DIR)/, $(IMAGES)) examples/she
 
 # step 10: (optional) clean
 clean:
-	rm -f $(BUILD_DIR)/*.o $(BUILD_DIR)/*.elf $(BUILD_DIR)/.depend* $(BUILD_DIR)/*.d
-	find . -name \*.o |xargs --no-run-if-empty rm
+	sudo rm -rf $(BUILD_DIR)

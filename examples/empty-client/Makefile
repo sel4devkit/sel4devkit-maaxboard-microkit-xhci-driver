@@ -31,7 +31,7 @@ TOOLCHAIN_CLI := aarch64-none-elf
 
 CC_CLIENT := $(TOOLCHAIN_CLI)-gcc
 LD_CLIENT := $(TOOLCHAIN_CLI)-ld
-LIBS_CLIENT := libc/libgcc.a libc/libc.a libc/libm.a libc/libgcc.a -lmicrokit -Tmicrokit.ld
+LIBS_CLIENT := ${LIBC_DIR}/libgcc.a ${LIBC_DIR}/libc.a ${LIBC_DIR}/libm.a ${LIBC_DIR}/libgcc.a -lmicrokit -Tmicrokit.ld
 
 # step 1: declare includes
 # all of these includes are required for compilation of api
@@ -41,7 +41,7 @@ CLIENT_INC_PARAMS=$(foreach d, $(CLIENT_INC), -I$d)
 
 # step 2: declare compilation flags
 # included here are the recommended compilation flags
-CLIENT_CFLAGS := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 $(WARNINGS) $(CLIENT_INC_PARAMS) -I$(BOARD_DIR)/include --specs=libc/picolibc.specs
+CLIENT_CFLAGS := -mcpu=$(CPU) -mstrict-align  -nostdlib -nolibc -ffreestanding -g3 -O3 $(WARNINGS) $(CLIENT_INC_PARAMS) -I$(BOARD_DIR)/include --specs=${LIBC_DIR}/picolibc.specs
 
 # step 3: declare linker flags
 # the board library is required as a loader flag
@@ -64,7 +64,7 @@ CLIENT_OBJS :=  empty-client.o hidkbdmap.o shared_queue.o shared_ringbuffer.o xh
 # This example includes libc. Note the *_OBJS is required to tell the compiler which
 # o files to include.
 $(BUILD_DIR)/example_client.elf: $(addprefix $(BUILD_DIR)/, $(CLIENT_OBJS))
-	$(LD_CLIENT) $(CLIENT_LD_FLAGS) $^ libc/libgcc.a libc/libc.a libc/libm.a libc/libgcc.a $(LIBS_CLIENT) -o $@
+	$(LD_CLIENT) $(CLIENT_LD_FLAGS) $^ ${LIBC_DIR}/libgcc.a ${LIBC_DIR}/libc.a ${LIBC_DIR}/libm.a ${LIBC_DIR}/libgcc.a $(LIBS_CLIENT) -o $@
 
 # step 8: add elf file to list of images
 # Use $(API_IMAGES) to reference driver required elfs compiled in its own makefile
@@ -80,5 +80,4 @@ $(IMAGE_FILE) $(REPORT_FILE): $(addprefix $(BUILD_DIR)/, $(IMAGES)) examples/emp
 
 # step 10: (optional) clean
 clean:
-	rm -f $(BUILD_DIR)/*.o $(BUILD_DIR)/*.elf $(BUILD_DIR)/.depend* $(BUILD_DIR)/*.d
-	find . -name \*.o |xargs --no-run-if-empty rm
+	sudo rm -rf $(BUILD_DIR)
