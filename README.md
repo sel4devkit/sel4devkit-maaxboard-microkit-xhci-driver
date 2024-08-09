@@ -21,7 +21,7 @@ Specifically, we have provided support for these USB devices:
     - `compiler/`: Contains a build script to add download the compiler, extract it and set it to $PATH.
     - `microkit/` : Contains instructions to clone a prebuilt version of the SDK.
     - `netbsd/`: Capgemini fork of NetBSD customised to function in the context of microkit.
-    - 'picolibc' : Contains instructions to clone a picolibc repository and copy the necessary files.
+    - `picolibc` : Contains instructions to clone a picolibc repository and copy the necessary files.
 - `build.sh`: shell file to set up required environment variables and call makefile. Can be used with the following options:
     - Specify example with `-e`. Examples:
         - empty-client: Simple client that prints out list of connected (and supported) devices.
@@ -35,9 +35,9 @@ Specifically, we have provided support for these USB devices:
 
 ## Requirements
 - This driver expects to have the accompanying NetBSD fork.
-  - Use branch 'trunk' for netbsd.  Located [here](https://github.com/sel4devkit/sel4devkit-maaxboard-microkit-netbsd-fork) 
-- This driver assumes the existence of a built Microkit SDK. Located [here](https://github.com/sel4devkit/sel4devkit-maaxboard-microkit-dev)
-- This driver assumes a pre-built microkit libc. Located [here](https://github.com/sel4devkit/sel4devkit-maaxboard-microkit-picolibc)
+  - Use branch 'trunk' for netbsd.  Located [here](https://github.com/sel4devkit/sel4devkit-maaxboard-microkit-netbsd-fork).
+- This driver assumes the existence of a built Microkit SDK. Located [here](https://github.com/sel4devkit/sel4devkit-maaxboard-microkit-dev).
+- This driver assumes a pre-built microkit libc. Located [here](https://github.com/sel4devkit/sel4devkit-maaxboard-microkit-picolibc).
     - Use branch linker_crt
     - See below for build and use instructions
 
