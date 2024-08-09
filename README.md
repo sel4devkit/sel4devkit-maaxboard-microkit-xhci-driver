@@ -36,7 +36,7 @@ Specifically, we have provided support for these USB devices:
 ## Requirements
 - This driver expects to have the accompanying NetBSD fork.
   - Use branch 'trunk' for netbsd.  Located [here](https://github.com/sel4devkit/sel4devkit-maaxboard-microkit-netbsd-fork) 
-- This driver assumes the existence of a built microkit sdk.
+- This driver assumes the existence of a built Microkit SDK. Located [here](https://github.com/sel4devkit/sel4devkit-maaxboard-microkit-dev)
 - This driver assumes a pre-built microkit libc. Located [here](https://github.com/sel4devkit/sel4devkit-maaxboard-microkit-picolibc))
     - Use branch linker_crt
     - See below for build and use instructions
