@@ -41,9 +41,9 @@ usage:
 
 .PHONY: get
 get: | ${OUT_PATH}
-# git -C ${OUT_PATH} clone --branch "linker_crt" "git@github.com:sel4devkit/sel4devkit-maaxboard-microkit-picolibc.git" ${LIB_PATH}
-# cd ${OUT_PATH}/${LIB_PATH} && ./build_script_microkit.sh
-# cp ${OUT_PATH}/${LIB_PATH}/picolib-microkit/picolibc.specs ${OUT_PATH}/${LIB_PATH}/picolib-microkit/newlib/libc.a ${OUT_PATH}/${LIB_PATH}/picolib-microkit/newlib/libm.a ${OUT_PATH}
+	git -C ${OUT_PATH} clone --branch "linker_crt" "git@github.com:sel4devkit/sel4devkit-maaxboard-microkit-picolibc.git" ${LIB_PATH}
+	cd ${OUT_PATH}/${LIB_PATH} && ./build_script_microkit.sh
+	cp ${OUT_PATH}/${LIB_PATH}/picolib-microkit/picolibc.specs ${OUT_PATH}/${LIB_PATH}/picolib-microkit/newlib/libc.a ${OUT_PATH}/${LIB_PATH}/picolib-microkit/newlib/libm.a ${OUT_PATH}
 	mv libgcc.a ${OUT_PATH}
 
 ${OUT_PATH}:
