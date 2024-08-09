@@ -1,8 +1,7 @@
 # seL4 USB 3.0 (xHCI) driver
 
-This repo contains the code for the xHCI driver developed by Capgemini. This is not intended to be standalone and should be used by the [xHCI Manifest](https://github.com/sel4devkit/sel4devkit-maaxboard-microkit-xhci-manifest).
-
-The project should also be built inside this [Docker environment](https://github.com/sel4-cap/sel4devkit-maaxboard-docker-dev-env).
+This repo contains the code for the xHCI driver developed by Capgemini.
+The project should be built with this [Docker environment](https://github.com/sel4devkit/sel4devkit-maaxboard-microkit-docker-dev-env).
 
 Specifically, we have provided support for these USB devices:
 - Keyboard
@@ -12,14 +11,17 @@ Specifically, we have provided support for these USB devices:
 - Mass Storage Devices
 
 ## Directory structure
-- `api/`: Contains the bulk of the files required by the driver to function
-    - `include/`: Headers for api, include for api functions
+- `api/`: Contains the bulk of the files required by the driver to function.
+    - `include/`: Headers for api, include for api functions.
     - `src/`: Handles initialisation and handling of interrupts for xHCI driver.
-    - `utils`: Auxilliary files for use by the driver
+    - `utils`: Auxilliary files for use by the driver.
 - `examples`: contain example applications utilising the xHCI driver to demonstrate usage
 - `kernel`: contains dtb for desired build (currently ONLY supports maaxboard)
-- `libc`: Libc files (to be replaced by build from [microkit picolibc](https://github.com/sel4-cap/picolibc/tree/linker_crt))
-- `netbsd/`: Capgemini fork of NetBSD customised to function in the context of microkit. Note that the files are included in [this repository](https://github.com/sel4-cap/netbsd) and will be pulled in by the repo file in the manifest.
+-  `dep/`: Contains the dependencies for the project.
+    - `compiler/`: Contains a build script to add download the compiler, extract it and set it to $PATH.
+    - `microkit/` : Contains instructions to clone a prebuilt version of the SDK.
+    - `netbsd/`: Capgemini fork of NetBSD customised to function in the context of microkit.
+    - 'picolibc' : Contains instructions to clone a picolibc repository and copy the necessary files.
 - `build.sh`: shell file to set up required environment variables and call makefile. Can be used with the following options:
     - Specify example with `-e`. Examples:
         - empty-client: Simple client that prints out list of connected (and supported) devices.
@@ -33,57 +35,29 @@ Specifically, we have provided support for these USB devices:
 
 ## Requirements
 - This driver expects to have the accompanying NetBSD fork.
-  - Use branch 'trunk' for netbsd
+  - Use branch 'trunk' for netbsd.  Located [here](https://github.com/sel4devkit/sel4devkit-maaxboard-microkit-netbsd-fork) 
 - This driver assumes the existence of a built microkit sdk.
-- This driver assumes a pre-built microkit libc (found in this [repository](https://github.com/sel4-cap/picolibc/tree/linker_crt))
+- This driver assumes a pre-built microkit libc. Located [here](https://github.com/sel4devkit/sel4devkit-maaxboard-microkit-picolibc))
     - Use branch linker_crt
     - See below for build and use instructions
 
 ## Building
-### Building picolibc
-This project requires picolibc. To build and use picolibc navigate to the picolibc folder (pulled by the manifest) and run
-```
-cd <path-to-mk-manifest>/picolibc
-./build_script_microkit.sh
-```
-
-Then, copy the created files into the `libc` folder of `xhci-stub/`
-```
-cp picolib-microkit/picolibc.specs picolib-microkit/newlib/libc.a picolib-microkit/newlib/libm.a <path-to-mk-manifest>/xhci-stub/libc/.
-```
-
-### Initialise sddf submodule
-Navigate to the sDDF folder
-```
-cd <path-to-mk-manifest>/xhci_stub/api/sDDF
-```
-
-Initialise submodule
-```
-git submodule update --init --recursive
-```
-
-### Building Microkit
-
-Navgigate to the microkit folder
-```
-cd <path-to-mk-manifest>/microkit
-```
-
-Then run make
+### Building the dependencies
 
 ```
+cd dep
 make get
-make all
 ```
+To remove dependencies
+```
+make clean
+```
+The dependencies can be built individually by navigating to the appopriate folder apart from the compiler and SDDF which don't have their own Makefile. Note: **SDDF is located in the api/sDDF directory.**
 
 ### Build example
-To build this driver, use the `build.sh` bash script. The script assumes the driver has been pulled using the microkit manifest and therefore assumes the directory structure will mirror this.
-
-The `MICROKIT_DIR` environment variable will need to be changed to equal the location of the "microkit" directory. 
+To build this driver, use the `build.sh` bash script.
 
 Breakdown of variables set:
-- `MICROKIT_DIR`: Base directory of microkit repository
 - `MICROKIT_SDK`: Repository of microkit SDK
 - `MICROKIT_BOARD`: Board to create image for (default: maaxboard)
 - `MICROKIT_CONFIG`: Configuration to build with (default: debug)
@@ -91,7 +65,6 @@ Breakdown of variables set:
 - `BOARD_DIR`: Directory used by Microkit to pull includes
 - `BUILD_DIR`: (Can be modified) directory to produce image file
 - `PYTHONPATH`: Used by python microkit tool
-- `PATH`: Path augmented to include path of `aarch64_none_elf-gcc` compiler
 - `SEL4_XHCI_PATH`: Path of xhci_stub/ directory
 - `NETBSD_DIR`: Path of netbsd directory
 
@@ -100,8 +73,9 @@ By default, the driver will build with an empty example client that is subscribe
 The driver can be built with either a shell example (provides a shell like program), or an empty client that is subscribed to all channels, and will print a list of supported devices plugged into the board. The usage is as follows:
 
 ```sh
-./build.sh -e shell # or empty client
+./build.sh -e shell # or empty-client, FatFs
 ```
+Note: **The option -c must be used to clean the directory when switching between examples.**
 
 Call `./build.sh` with no arguments to see optional flags.
 
