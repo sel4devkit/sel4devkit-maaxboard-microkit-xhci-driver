@@ -1,8 +1,8 @@
 # Define toolchain
 TOOLCHAIN_API   := aarch64-none-elf
-CC_API      := $(TOOLCHAIN_API)-gcc
-LD_API      := $(TOOLCHAIN_API)-ld
-AS_API      := $(TOOLCHAIN_API)-as
+CC_API      := $(COMPILER_PATH)/$(TOOLCHAIN_API)-gcc
+LD_API      := $(COMPILER_PATH)/$(TOOLCHAIN_API)-ld
+AS_API      := $(COMPILER_PATH)/$(TOOLCHAIN_API)-as
 
 NETBSD_SRC	:= 	dev_verbose.o \
 				subr_device.o \
