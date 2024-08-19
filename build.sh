@@ -13,6 +13,8 @@ export NETBSD_DIR="$SEL4_XHCI_PATH/dep/netbsd/out/sel4devkit-maaxboard-microkit-
 
 export LIBC_DIR="$SEL4_XHCI_PATH/dep/picolibc/out"
 
+export COMPILER_PATH="$SEL4_XHCI_PATH/dep/compiler/gcc-arm-10.2-2020.11-x86_64-aarch64-none-elf/bin"
+
 mkdir -p "$BUILD_DIR"
 
 examples=( "shell" "empty-client" "FatFs")
