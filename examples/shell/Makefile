@@ -31,10 +31,9 @@ CPU := cortex-a53
 
 # EXAMPLE EMPTY API USER
 
-
-TCH := aarch64-linux-gnu
-CC_CLIENT := ${TCH}-gcc
-LD_CLIENT := ${TCH}-ld
+TOOLCHAIN_CLI := aarch64-none-elf
+CC_CLIENT := $(COMPILER_PATH)/$(TOOLCHAIN_CLI)-gcc
+LD_CLIENT := $(COMPILER_PATH)/$(TOOLCHAIN_CLI)-ld
 LIBS_CLIENT := ${LIBC_DIR}/libgcc.a ${LIBC_DIR}/libc.a ${LIBC_DIR}/libm.a ${LIBC_DIR}/libgcc.a -lmicrokit -Tmicrokit.ld
 
 # step 1: declare includes
