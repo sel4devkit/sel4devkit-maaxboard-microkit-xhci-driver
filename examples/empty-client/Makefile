@@ -27,10 +27,10 @@ endif
 
 # EXAMPLE EMPTY API USER
 
-TOOLCHAIN_CLI := aarch64-none-elf
+TCH := aarch64-linux-gnu
+CC_CLIENT := ${TCH}-gcc
+LD_CLIENT := ${TCH}-ld
 
-CC_CLIENT := $(COMPILER_PATH)/$(TOOLCHAIN_API)-gcc
-LD_CLIENT := $(COMPILER_PATH)/$(TOOLCHAIN_CLI)-ld
 LIBS_CLIENT := ${LIBC_DIR}/libgcc.a ${LIBC_DIR}/libc.a ${LIBC_DIR}/libm.a ${LIBC_DIR}/libgcc.a -lmicrokit -Tmicrokit.ld
 
 # step 1: declare includes
