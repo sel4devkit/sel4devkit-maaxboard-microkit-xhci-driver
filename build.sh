@@ -2,7 +2,7 @@
 export MICROKIT_BOARD="maaxboard"
 export MICROKIT_CONFIG="debug"
 
-export MICROKIT_SDK="dep/microkit/out/sel4devkit-maaxboard-microkit-dev/out/microkit-sdk-1.2.6"
+export MICROKIT_SDK="dep/microkit/out/sel4devkit-maaxboard-microkit-dev/out/microkit-sdk-1.3.0"
 export BOARD_DIR="$MICROKIT_SDK/board/maaxboard/debug"
 export PYTHONPATH="$MICROKIT_SDK/bin"
 export MICROKIT_TOOL="$MICROKIT_SDK/bin/microkit"
